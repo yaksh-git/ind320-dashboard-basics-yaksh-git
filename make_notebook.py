@@ -133,22 +133,26 @@ cells = [
     ),
     nbf.v4.new_markdown_cell(
         "## 5. AI usage\n\n"
-        "I used OpenAI Codex to help create the initial notebook and Streamlit app, "
-        "translate column names, choose readable plots, and check the code against "
-        "the assignment. The resulting files were run in local tests. I will "
-        "review the final app and notebook before submission. **Edit this statement to match what you "
-        "personally did before handing it in.**"
+        "OpenAI Codex generated most of the initial Python code, the Streamlit app, "
+        "the Jupyter Notebook structure and plots, code comments, and a draft of "
+        "this work log. It also downloaded the course CSV, ran the notebook and "
+        "local app tests, created the GitHub repository, deployed the Streamlit app, "
+        "and prepared a PDF for review. I supplied the assignment text, chose to "
+        "use AI, provided my GitHub details, and authorized publication. I must "
+        "review the code, results, and wording myself before submission and take "
+        "responsibility for the final work. **Update this description if you use Claude or other AI tools or "
+        "make further changes before submitting.**"
     ),
     nbf.v4.new_markdown_cell(
         """## 6. Arbeidslogg (utkast – kontroller og tilpass før innlevering)
 
-Arbeidet med første del av IND320 startet med å gå gjennom kravene i Canvas og finne datafilen `reservoirs.csv` i faglærerens GitHub-repo. Jeg brukte OpenAI Codex som programmeringshjelp til å lage et første utkast til både Jupyter Notebook og Streamlit-appen. Bruken av AI er beskrevet separat over. Før innlevering må jeg selv kontrollere at denne loggen gjenspeiler det jeg faktisk har gjort, og legge til erfaringene fra siste gjennomgang, publisering og skjermopptak.
+Arbeidet med første del av IND320 startet med at jeg delte kravene fra Canvas med OpenAI Codex. Jeg valgte å bruke verktøyet til å skrive hoveddelen av koden og et utkast til dokumentasjonen. Codex fant datafilen `reservoirs.csv` i faglærerens GitHub-repo og laget både Jupyter Notebook og Streamlit-appen. Bruken av AI er beskrevet mer detaljert over. Før innlevering må jeg selv kontrollere at denne loggen gjenspeiler det jeg faktisk har gjort, og legge til erfaringene fra siste gjennomgang og skjermopptak.
 
 I notebooken blir CSV-filen lest med Pandas, og alle de norske kolonnenavnene blir oversatt til engelske navn som er lettere å bruke videre i koden. Datasettet inneholder flere geografiske serier for hver uke. Derfor brukes serien for Norge totalt når verdier vises over tid, mens hele datasettet brukes når kategoriene skal telles. Jeg viser de første og siste radene, datatyper, manglende verdier og en statistisk oppsummering. Dette gir et mer lesbart inntrykk av innholdet enn å skrive ut alle radene. Hver kolonne får sin egen figur. For kolonner med tall brukes tidsserier, mens kategorier og datoer vises på en måte som passer datatypen. Til slutt vises tallkolonnene sammen etter min–maks-normalisering, siden de har ulike enheter og skalaer. Alle kodecellene ble kjørt og kontrollert uten feil, slik at tabeller og figurer er lagret i notebooken.
 
-Streamlit-appen er bygget som fire separate sider med navigasjon i sidepanelet. Startsiden forklarer prosjektet, tabellsiden har én rad per CSV-kolonne og små linjediagrammer for den første måneden, og plotsiden lar brukeren velge kolonne og et intervall av måneder. Den fjerde siden er foreløpig en enkel plassholder, slik oppgaven åpner for. Data leses fra en lokal CSV-fil og mellomlagres med Streamlits cache-funksjon. Det var viktig å skille mellom den fullstendige tabellen og den nasjonale tidsserien; ellers kunne kurven ha hoppet mellom ulike geografiske områder. Alle fire sidene ble kjørt i en lokal app-test. Jeg testet også et konkret kolonnevalg og et månedsintervall, og tabellen viste elleve rader som forventet.
+Streamlit-appen er bygget som fire separate sider med navigasjon i sidepanelet. Startsiden forklarer prosjektet, tabellsiden har én rad per CSV-kolonne og små linjediagrammer for den første måneden, og plotsiden lar brukeren velge kolonne og et intervall av måneder. Den fjerde siden er foreløpig en enkel plassholder, slik oppgaven åpner for. Data leses fra en lokal CSV-fil og mellomlagres med Streamlits cache-funksjon. Det var viktig å skille mellom den fullstendige tabellen og den nasjonale tidsserien; ellers kunne kurven ha hoppet mellom ulike geografiske områder. Codex kjørte alle fire sidene i en lokal app-test, testet et konkret kolonnevalg og et månedsintervall og kontrollerte at tabellen viste elleve rader.
 
-Prosjektfilene ble deretter lagt i et offentlig GitHub-repo, og Streamlit Cloud ble koblet til `app.py` på hovedgrenen. De faktiske lenkene står øverst i notebooken. Nettappen ble åpnet og kontrollert på alle fire sider etter publisering. Før levering gjenstår min egen gjennomlesning av notebook og PDF og et kort skjermopptak. Jeg må også justere formuleringer i denne loggen som ikke stemmer med min egen erfaring.
+Med min godkjenning la Codex prosjektfilene i et offentlig GitHub-repo og koblet Streamlit Cloud til `app.py` på hovedgrenen. De faktiske lenkene står øverst i notebooken. Codex åpnet nettappen og kontrollerte alle fire sidene etter publisering. Før levering gjenstår min egen gjennomlesning av notebook og PDF og et kort skjermopptak. Jeg må også justere formuleringer i denne loggen som ikke stemmer med min egen erfaring.
 """
     ),
 ]
