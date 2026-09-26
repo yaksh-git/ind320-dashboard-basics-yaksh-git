@@ -13,9 +13,8 @@ cells = [
     ),
     nbf.v4.new_markdown_cell(
         "## Project links\n\n"
-        "- Public GitHub repository: **ADD LINK AFTER PUBLISHING**\n"
-        "- Streamlit app: **ADD LINK AFTER DEPLOYMENT**\n\n"
-        "These links must be filled in before PDF export."
+        "- Public GitHub repository: https://github.com/yaksh-git/ind320-dashboard-basics-yaksh-git\n"
+        "- Streamlit app: https://ind320-dashboard-basics-yaksh-git.streamlit.app/"
     ),
     nbf.v4.new_markdown_cell(
         "## 1. Load and rename the data\n\n"
@@ -58,11 +57,14 @@ cells = [
         "This is more useful than printing all 14,877 rows."
     ),
     nbf.v4.new_code_cell(
-        "# Show the beginning and end of the chronologically sorted source.\n"
-        "display(data.head(10))\n"
-        "display(data.tail(10))\n"
+        "# Show useful fields from the beginning and end of the sorted source.\n"
+        "preview_columns = ['date', 'area_type', 'area_number', 'fill_level',\n"
+        "                   'capacity_twh', 'stored_energy_twh']\n"
+        "display(data[preview_columns].head(10))\n"
+        "display(data[preview_columns].tail(10))\n"
         "display(pd.DataFrame({'dtype': data.dtypes.astype(str), 'missing': data.isna().sum()}))\n"
-        "display(data.describe(include='all').T)"
+        "# A compact numeric summary fits both the notebook and PDF page.\n"
+        "display(data.select_dtypes(include='number').describe().T[['count', 'mean', 'std', 'min', 'max']])"
     ),
     nbf.v4.new_markdown_cell(
         "## 3. Plot every column separately\n\n"
@@ -146,7 +148,7 @@ I notebooken blir CSV-filen lest med Pandas, og alle de norske kolonnenavnene bl
 
 Streamlit-appen er bygget som fire separate sider med navigasjon i sidepanelet. Startsiden forklarer prosjektet, tabellsiden har én rad per CSV-kolonne og små linjediagrammer for den første måneden, og plotsiden lar brukeren velge kolonne og et intervall av måneder. Den fjerde siden er foreløpig en enkel plassholder, slik oppgaven åpner for. Data leses fra en lokal CSV-fil og mellomlagres med Streamlits cache-funksjon. Det var viktig å skille mellom den fullstendige tabellen og den nasjonale tidsserien; ellers kunne kurven ha hoppet mellom ulike geografiske områder. Alle fire sidene ble kjørt i en lokal app-test. Jeg testet også et konkret kolonnevalg og et månedsintervall, og tabellen viste elleve rader som forventet.
 
-Det som gjenstår før levering er å publisere repoet og appen, legge inn de faktiske lenkene, eksportere notebooken til PDF og spille inn en kort gjennomgang. Etter publisering må jeg åpne appen selv og kontrollere at den oppfører seg likt som den lokale versjonen.
+Prosjektfilene ble deretter lagt i et offentlig GitHub-repo, og Streamlit Cloud ble koblet til `app.py` på hovedgrenen. De faktiske lenkene står øverst i notebooken. Nettappen ble åpnet og kontrollert på alle fire sider etter publisering. Før levering gjenstår min egen gjennomlesning av notebook og PDF og et kort skjermopptak. Jeg må også justere formuleringer i denne loggen som ikke stemmer med min egen erfaring.
 """
     ),
 ]

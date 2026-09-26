@@ -35,12 +35,11 @@ documentation deliverable. It should be run completely before PDF export.
 
 ## Submission checklist
 
-- [ ] Replace the two placeholder links in the notebook with the public GitHub
-      repository and live Streamlit app URLs.
+- [x] Add the public GitHub repository and live Streamlit app URLs to the notebook.
 - [ ] Complete the 300–500-word work log with your actual experience using
       Jupyter Notebook and Streamlit, and review the AI-usage statement.
 - [ ] Run all notebook cells and export the notebook to PDF.
-- [ ] Check all four pages on the deployed app, including table and plot controls.
+- [x] Check all four pages on the deployed app, including table and plot controls.
 - [ ] Record and share a five-minute screencast showing the app and explaining
       the main code.
 
