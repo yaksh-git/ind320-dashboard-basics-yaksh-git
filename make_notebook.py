@@ -101,7 +101,8 @@ cells = [
     ),
     nbf.v4.new_code_cell(
         "# Year 0001 is outside pandas' datetime range and means no usable date.\n"
-        "next_date = pd.to_datetime(data['next_publication_date'], errors='coerce')\n"
+        "next_date = pd.to_datetime(data['next_publication_date'],\n"
+        "                           format='%Y-%m-%dT%H:%M:%S', errors='coerce')\n"
         "publication_counts = pd.Series({'Provided': next_date.notna().sum(),\n"
         "                                'Unavailable': next_date.isna().sum()})\n"
         "ax = publication_counts.plot.bar(figsize=(6, 3), title='next_publication_date')\n"
