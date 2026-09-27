@@ -139,26 +139,29 @@ cells = [
     ),
     nbf.v4.new_markdown_cell(
         "## 5. AI usage\n\n"
-        "OpenAI Codex generated most of the initial Python code, the Streamlit app, "
-        "the Jupyter Notebook structure and plots, code comments, and a draft of "
-        "this work log. It also downloaded the course CSV, ran the notebook and "
-        "local app tests, created the GitHub repository, deployed the Streamlit app, "
-        "and prepared a PDF for review. I supplied the assignment text, chose to "
-        "use AI, provided my GitHub details, and authorized publication. I must "
-        "review the code, results, and wording myself before submission and take "
-        "responsibility for the final work. **Update this description if you use Claude or other AI tools or "
-        "make further changes before submitting.**"
+        "The course encourages the use of AI tools. I chose OpenAI Codex with GPT-6 "
+        "for this project, although I also have access to Claude Code. I used Codex "
+        "both to build a first version and to ask how and why the notebook, plots, "
+        "Streamlit pages, and deployment work. Codex generated most of the initial "
+        "Python and Streamlit code, notebook structure, comments, and a draft of this "
+        "log. It also obtained the course CSV, ran checks, set up the public GitHub "
+        "repository and Streamlit app with my approval, and prepared a PDF for review. "
+        "I pulled the course repository to my computer and connected Codex to my "
+        "local project. I asked follow-up questions, inspected outputs, reported "
+        "warnings, and requested fixes. I explicitly approved the public publication "
+        "steps rather than enabling automatic approval. I am responsible for checking "
+        "the final code, results, text, and screencast before submission."
     ),
     nbf.v4.new_markdown_cell(
-        """## 6. Arbeidslogg (utkast – kontroller og tilpass før innlevering)
+        """## 6. Work log
 
-Arbeidet med første del av IND320 startet med at jeg delte kravene fra Canvas med OpenAI Codex. Jeg valgte å bruke verktøyet til å skrive hoveddelen av koden og et utkast til dokumentasjonen. Codex fant datafilen `reservoirs.csv` i faglærerens GitHub-repo og laget både Jupyter Notebook og Streamlit-appen. Bruken av AI er beskrevet mer detaljert over. Før innlevering må jeg selv kontrollere at denne loggen gjenspeiler det jeg faktisk har gjort, og legge til erfaringene fra siste gjennomgang og skjermopptak.
+I began Part 1 by reading the Canvas instructions and pulling the course repository into a local folder on my computer. I connected Codex to the local project and shared the assignment requirements. The instructions explicitly encourage AI tools, and I wanted to try the GPT-6 models in Codex for this assignment, even though I also have Claude Code. I used AI to explore how the code works and checked whether its output met the requirements. Developers in our company also use AI extensively and review its results manually. In this project, I asked Codex questions about what a Jupyter Notebook is, why it was needed, and how the code and app fit together. Codex generated most of the first implementation, while I guided the task and asked for explanations and corrections.
 
-I notebooken blir CSV-filen lest med Pandas, og alle de norske kolonnenavnene blir oversatt til engelske navn som er lettere å bruke videre i koden. Datasettet inneholder flere geografiske serier for hver uke. Derfor brukes serien for Norge totalt når verdier vises over tid, mens hele datasettet brukes når kategoriene skal telles. Jeg viser de første og siste radene, datatyper, manglende verdier og en statistisk oppsummering. Dette gir et mer lesbart inntrykk av innholdet enn å skrive ut alle radene. Hver kolonne får sin egen figur. For kolonner med tall brukes tidsserier, mens kategorier og datoer vises på en måte som passer datatypen. Til slutt vises tallkolonnene sammen etter min–maks-normalisering, siden de har ulike enheter og skalaer. Alle kodecellene ble kjørt og kontrollert uten feil, slik at tabeller og figurer er lagret i notebooken.
+In the notebook, Pandas reads `reservoirs.csv` and renames the Norwegian headers to English. I can inspect selected rows, data types, missing values, and summary statistics. The CSV contains several geographic areas for each week, so the time series use the supplied Norway total instead of mixing areas. Each column is plotted separately using a suitable form for its data type. A combined plot scales the numeric columns between zero and one because their units and ranges differ. This lets me compare their patterns without suggesting that their original values are directly comparable. I ran the cells and looked at the tables and plots. When a date parsing warning appeared, I asked why it happened and had the format specified explicitly. I also reported a Matplotlib cache warning, which led to a writable cache location being configured.
 
-Streamlit-appen er bygget som fire separate sider med navigasjon i sidepanelet. Startsiden forklarer prosjektet, tabellsiden har én rad per CSV-kolonne og små linjediagrammer for den første måneden, og plotsiden lar brukeren velge kolonne og et intervall av måneder. Den fjerde siden er foreløpig en enkel plassholder, slik oppgaven åpner for. Data leses fra en lokal CSV-fil og mellomlagres med Streamlits cache-funksjon. Det var viktig å skille mellom den fullstendige tabellen og den nasjonale tidsserien; ellers kunne kurven ha hoppet mellom ulike geografiske områder. Codex kjørte alle fire sidene i en lokal app-test, testet et konkret kolonnevalg og et månedsintervall og kontrollerte at tabellen viste elleve rader.
+The Streamlit app has four pages. The home page provides sidebar navigation; the data table has one row per imported column and first-month sparklines for numeric values. The plot page lets me select a column or all numeric columns and choose a month range. The fourth page is a placeholder for later parts of the course. The app reads the local CSV and caches the data. Codex ran local checks of the pages and controls, and I opened the online app to inspect how it behaved.
 
-Med min godkjenning la Codex prosjektfilene i et offentlig GitHub-repo og koblet Streamlit Cloud til `app.py` på hovedgrenen. De faktiske lenkene står øverst i notebooken. Codex åpnet nettappen og kontrollerte alle fire sidene etter publisering. Før levering gjenstår min egen gjennomlesning av notebook og PDF og et kort skjermopptak. Jeg må også justere formuleringer i denne loggen som ikke stemmer med min egen erfaring.
+I explicitly approved the public GitHub repository and Streamlit publication steps. Codex handled the technical setup, testing, and deployment; I did not enable automatic approval for those public actions. I have continued to ask what and why when reviewing the work. Before submitting, I will check the final notebook and PDF against the assignment and explain the code and my AI use in the screencast.
 """
     ),
 ]
