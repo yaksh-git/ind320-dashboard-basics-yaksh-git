@@ -1,7 +1,16 @@
 """Entry point for the four-page Streamlit app."""
 
+import os
+import tempfile
+from pathlib import Path
+
 import streamlit as st
 
+
+# Matplotlib needs a writable cache when the plot page loads (including on Windows).
+mpl_cache = Path(tempfile.gettempdir()) / "ind320-matplotlib"
+mpl_cache.mkdir(exist_ok=True)
+os.environ["MPLCONFIGDIR"] = str(mpl_cache)
 
 st.set_page_config(page_title="Norwegian Reservoir Dashboard", layout="wide")
 
@@ -16,4 +25,3 @@ navigation = st.navigation(
     position="sidebar",
 )
 navigation.run()
-

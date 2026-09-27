@@ -25,7 +25,12 @@ cells = [
     ),
     nbf.v4.new_code_cell(
         "from pathlib import Path\n"
+        "import os\n"
         "import pandas as pd\n"
+        "# Use a writable project cache before importing Matplotlib on Windows.\n"
+        "mpl_cache = Path('.matplotlib')\n"
+        "mpl_cache.mkdir(exist_ok=True)\n"
+        "os.environ['MPLCONFIGDIR'] = str(mpl_cache.resolve())\n"
         "import matplotlib.pyplot as plt\n\n"
         "# Keep the CSV in the same folder as this notebook.\n"
         "csv_path = Path('reservoirs.csv')\n"
