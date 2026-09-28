@@ -33,6 +33,17 @@ NUMERIC_COLUMNS = [
     "fill_level_change",
 ]
 
+# Human-readable labels and units keep the plots understandable.
+PLOT_LABELS = {
+    "iso_year": ("ISO year", "Year"),
+    "iso_week": ("ISO week", "Week number"),
+    "fill_level": ("Reservoir fill level", "Fraction full"),
+    "capacity_twh": ("Reservoir capacity", "TWh"),
+    "stored_energy_twh": ("Stored energy", "TWh"),
+    "previous_week_fill_level": ("Previous-week fill level", "Fraction full"),
+    "fill_level_change": ("Weekly change in fill level", "Fraction points"),
+}
+
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
@@ -47,4 +58,3 @@ def load_data() -> pd.DataFrame:
 def national_series(frame: pd.DataFrame) -> pd.DataFrame:
     """Use the source's national aggregate (NO, area 0) for time-series plots."""
     return frame.loc[(frame["area_type"] == "NO") & (frame["area_number"] == 0)].copy()
-
