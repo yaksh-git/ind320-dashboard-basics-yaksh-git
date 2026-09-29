@@ -34,6 +34,9 @@ The app uses the local CSV and has four pages. The notebook is the analysis and
 documentation deliverable. It should be run completely before PDF export.
 Seaborn draws the time-series and category charts. The combined numeric view uses
 separate panels because ISO fields, fractions, and TWh have different units.
+The home page summarizes the latest CSV report and the national history. The
+About page explains area codes and units. Shared presentation helpers are in
+`ui.py`. The source data and notebook calculations are unchanged by the visual update.
 
 ## Submission checklist
 

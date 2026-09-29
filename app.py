@@ -14,6 +14,13 @@ os.environ["MPLCONFIGDIR"] = str(mpl_cache)
 
 st.set_page_config(page_title="Norwegian Reservoir Dashboard", layout="wide")
 
+from ui import setup_ui
+
+setup_ui()
+with st.sidebar:
+    st.markdown("### Norwegian reservoirs")
+    st.caption("IND320 · Part 1\n\nWeekly data, from source to insight.")
+
 # Streamlit renders this page list in the sidebar on every page.
 navigation = st.navigation(
     [

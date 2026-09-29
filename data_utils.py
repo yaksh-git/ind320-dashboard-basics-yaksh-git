@@ -47,7 +47,7 @@ PLOT_LABELS = {
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    """Read the local CSV once per file version for faster Streamlit reruns."""
+    """Cache the local CSV across Streamlit reruns for faster interaction."""
     frame = pd.read_csv(DATA_PATH).rename(columns=COLUMN_NAMES)
     frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
     # Year 0001 denotes an unknown publication date in the source file.
