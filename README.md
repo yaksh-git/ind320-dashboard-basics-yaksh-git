@@ -45,7 +45,7 @@ About page explains area codes and units. Shared presentation helpers are in
       against your own experience before submission.
 - [ ] Run all notebook cells and export the notebook to PDF.
 - [x] Check all four pages on the deployed app, including table and plot controls.
-- [ ] Record and share a five-minute screencast showing the app and explaining
-      the main code.
+- [x] [Watch the Part 1 screencast](screencast_part1.mp4) showing the app and
+      explaining the main code.
 
 Data source: [IND320 course repository](https://github.com/khliland/ind320/tree/main/D2Dbook/data).
