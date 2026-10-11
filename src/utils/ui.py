@@ -1,13 +1,16 @@
-"""Shared presentation helpers for all Streamlit pages."""
+"""Shared presentation helpers for all Streamlit pages: page style, headers and charts."""
 
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import seaborn as sns
 import streamlit as st
 
-ACCENT = "#087F8C"
+
+ACCENT = "#087F8C"  # teal used for single-series charts and highlights
 
 
-def setup_ui():
-    """Keep native Streamlit controls and add consistent spacing and colors."""
+def setup_ui() -> None:
+    """Keep native Streamlit controls and add consistent spacing and colours."""
     st.markdown("""
     <style>
     .stApp { background: #F7FAFC; }
@@ -21,15 +24,15 @@ def setup_ui():
     """, unsafe_allow_html=True)
 
 
-def page_header(section, title, description):
-    """Keep the same heading hierarchy on every page."""
+def page_header(section: str, title: str, description: str) -> None:
+    """Draw the same three-level heading (small label, title, caption) on every page."""
     st.markdown(f'<div class="eyebrow">{section}</div>', unsafe_allow_html=True)
     st.title(title)
     st.caption(description)
 
 
-def chart_style():
-    """Match Seaborn figures to the app's teal and navy palette."""
+def chart_style() -> None:
+    """Match Seaborn and Matplotlib figures to the app's teal and navy palette."""
     sns.set_theme(style="whitegrid", palette="colorblind", rc={
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.edgecolor": "#DCE5EB", "grid.color": "#E8EEF2",
@@ -38,3 +41,10 @@ def chart_style():
         "axes.titleweight": "bold", "grid.linewidth": 0.6,
         "figure.facecolor": "#F7FAFC", "axes.facecolor": "#F7FAFC",
     })
+
+
+def show_figure(figure: Figure) -> None:
+    """Show a Matplotlib figure at full width, then close it to free memory between reruns."""
+    figure.tight_layout()
+    st.pyplot(figure, width="stretch")
+    plt.close(figure)

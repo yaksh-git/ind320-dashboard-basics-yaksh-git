@@ -13,6 +13,7 @@ year and month follow Norwegian local time, so January starts at midnight in Osl
 
 import pandas as pd
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.errors import ConfigurationError
 import streamlit as st
 
@@ -27,7 +28,7 @@ class MissingSecrets(RuntimeError):
 
 
 @st.cache_resource
-def get_collection():
+def get_collection() -> Collection:
     """Create one MongoDB client per app process and return the flow collection.
 
     The connection string is read from st.secrets: locally from .streamlit/secrets.toml
@@ -49,7 +50,7 @@ def get_collection():
 
 
 @st.cache_data(ttl=CACHE_SECONDS)
-def load_options() -> dict:
+def load_options() -> dict[str, list]:
     """Connections (neighbour countries) and years available in the database."""
     collection = get_collection()
     return {

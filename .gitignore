@@ -12,3 +12,6 @@ tmp/
 output/
 # Local cache of downloaded API data (re-created by the notebook).
 data/cache/
+# Local Claude Code settings (only .claude/CLAUDE.md is shared).
+.claude/launch.json
+.claude/settings.local.json

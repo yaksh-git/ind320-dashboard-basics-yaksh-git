@@ -1,5 +1,5 @@
 # Extra packages for running the Part 2 notebook locally (not needed by the app).
--r requirements.txt
+-r ../requirements.txt
 # The course book pins PySpark 3.5.1 for the Spark Cassandra Connector 3.5.1.
 pyspark==3.5.1
 pyarrow>=15,<22

@@ -58,8 +58,8 @@ AREA_TYPES = {
 }
 
 
-def get_json(endpoint: str):
-    """Call one NVE endpoint and return the decoded JSON body."""
+def get_json(endpoint: str) -> list[dict]:
+    """Call one NVE endpoint and return the decoded JSON body (a list of records)."""
     response = requests.get(
         f"{API_URL}/{endpoint}", headers={"Accept": "application/json"}, timeout=60
     )

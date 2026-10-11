@@ -14,7 +14,7 @@ os.environ["MPLCONFIGDIR"] = str(mpl_cache)
 
 st.set_page_config(page_title="Norwegian Reservoir Dashboard", layout="wide")
 
-from dashboard.ui import setup_ui
+from src.utils.ui import setup_ui
 
 setup_ui()
 with st.sidebar:
@@ -26,12 +26,12 @@ with st.sidebar:
 # and page 6 reads the cross-border flows from MongoDB.
 navigation = st.navigation(
     [
-        st.Page("pages/home.py", title="Home", icon="🏠", default=True),
-        st.Page("pages/data_table.py", title="Data table", icon="📋"),
-        st.Page("pages/data_plot.py", title="Data plot", icon="📈"),
-        st.Page("pages/reservoir_areas.py", title="Reservoir areas", icon="💧"),
-        st.Page("pages/about.py", title="About", icon="ℹ️"),
-        st.Page("pages/cross_border.py", title="Cross-border flows", icon="🔌"),
+        st.Page("src/pages/home.py", title="Home", icon="🏠", default=True),
+        st.Page("src/pages/data_table.py", title="Data table", icon="📋"),
+        st.Page("src/pages/data_plot.py", title="Data plot", icon="📈"),
+        st.Page("src/pages/reservoir_areas.py", title="Reservoir areas", icon="💧"),
+        st.Page("src/pages/about.py", title="About", icon="ℹ️"),
+        st.Page("src/pages/cross_border.py", title="Cross-border flows", icon="🔌"),
     ],
     position="sidebar",
 )

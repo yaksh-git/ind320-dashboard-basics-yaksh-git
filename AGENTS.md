@@ -1,62 +1,88 @@
 # AGENTS.md
 
 Rules for AI coding agents (Codex, Claude Code, Copilot, …) working in this repository.
-Keep this file short and up to date when the structure changes.
+Claude Code reads this file through `.claude/CLAUDE.md`. Keep it short and update it when the
+structure changes.
 
 ## Project
 
 IND320 project work (NMBU): a Streamlit app and a Jupyter Notebook that grow over four parts.
-The student submits the work and must be able to explain every part of it, so prefer clear,
+The student submits the work and must be able to **explain every line**. Prefer clear,
 commented code over clever code, and explain changes in plain language.
 
-## Structure
+## Repository structure
 
-| Path | Content |
-|---|---|
-| `app.py` | Entry point and page navigation. Page order follows the assignment: 4 Reservoir areas, 5 About, 6 Cross-border flows |
-| `pages/` | One file per Streamlit page |
-| `dashboard/` | Shared app code: `nve_api.py` (NVE API), `flows_db.py` (MongoDB queries), `ui.py` (styling) |
-| `notebooks/` | `ind320_part2.ipynb`, the analysis and documentation deliverable |
-| `docs/part1/` | Archived Part 1 (notebook, generator, screencast). Do not change |
-| `data/cache/` | Downloaded API data, ignored by Git, re-created by the notebook |
-| `requirements.txt` | App packages (installed by Streamlit Community Cloud) |
-| `requirements-notebook.txt` | Adds PySpark, the Cassandra driver and Jupyter tools for the notebook |
+```
+app.py                  entry point: page navigation only
+requirements.txt        app packages (installed by Streamlit Community Cloud)
+src/pages/              one file per Streamlit page
+src/utils/              shared code: nve_api.py (NVE API), flows_db.py (MongoDB), ui.py (styling)
+notebooks/              the part's notebook + requirements.txt with the notebook-only packages
+docs/part_<N>/          finished deliverables of earlier parts (do not edit)
+data/cache/             downloaded API data (Git-ignored, re-created by the notebook)
+.streamlit/             config.toml (theme); secrets.toml is local and Git-ignored
+```
+
+Keep the repository root free of other files. Page order in `app.py` follows the assignment:
+4 Reservoir areas, 5 About, 6 Cross-border flows.
+
+## How to write code
+
+- **Page pattern.** Each page file has a module docstring, small named functions and one
+  `render_page()` that is called at the bottom. No logic at module level apart from that call.
+- **Small functions.** If a block is longer than about 10 lines or has its own purpose (load,
+  filter, plot, show), extract it into a function with a descriptive name.
+- **Docstrings and comments, always.** Every function has a one-line docstring that says what it
+  returns or shows. Comments explain *why* (units, time zones, API quirks), not what the syntax does.
+- **Type hints** on all function parameters and return values (`pd.DataFrame`, `Figure`, `None`, …).
+- **Shared code.** Data access and styling live in `src/utils/`. Reuse `load_data()`,
+  `page_header()`, `chart_style()` and `show_figure()` instead of rewriting them.
+- **Plots:** Seaborn/Matplotlib with `chart_style()`. One line per area or link. Label the axes with units.
+- **Notebook:** every cell starts with a comment; markdown before each section explains the
+  purpose and the findings. Run all cells before the PDF export.
+
+## Do NOT
+
+- Do **not** duplicate code that already exists in `src/utils/`. Extend the shared helper instead.
+- Do **not** commit, print or ask for secrets (passwords, tokens, connection strings). Error
+  messages must not show request URLs that contain the ENTSO-E token.
+- Do **not** put different units on one y-axis, or draw one line through several areas.
+- Do **not** change the visible behaviour of existing pages or move files without first
+  describing the change to the student and getting an OK.
+- Do **not** push to `main` or merge without the student's approval. Work on the part branch
+  (Part 2: `codex/ind320-part2`).
+- Do **not** write the work log or the AI-usage statement as if you were the student. Give facts.
+- Do **not** commit `notes/` (private notes) or files in `data/cache/`.
+
+## Data facts that are easy to get wrong
+
+- NVE `dato_Id` is the Sunday that ends the ISO week. `neste_Publiseringsdato` year `0001` means no date.
+  Always pass an explicit format to `pd.to_datetime`.
+- The NVE API has no query parameters: every call returns the full history.
+- ENTSO-E physical flows are MW per direction (not netted), at 15 or 60 minute resolution. Convert to
+  MWh with the resolution before summing. One request may cover at most one year.
+- Store times in UTC; derive year and month in `Europe/Oslo`.
 
 ## Commands
 
 ```bash
-uv venv --python 3.12 .venv && uv pip install -r requirements-notebook.txt
+uv venv --python 3.12 .venv && uv pip install -r notebooks/requirements.txt
 .venv/bin/python -m streamlit run app.py
-docker start my_cassandra            # first time: docker run --name my_cassandra -p 9042:9042 -d cassandra:latest
-.venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/ind320_part2.ipynb
+docker start my_cassandra   # first time: docker run --name my_cassandra -p 9042:9042 -d cassandra:latest
 ```
 
-## Rules
+Versions follow the course book: Python 3.12, PySpark 3.5.1 with
+`spark-cassandra-connector_2.12:3.5.1`, Java 17. PySpark 3.5 needs `import setuptools` before
+`pyspark` on Python 3.12, because it still imports `distutils`.
 
-- **Secrets** live only in `.streamlit/secrets.toml` (Git-ignored) and in the Streamlit Cloud secrets.
-  Never commit, print or ask for passwords, tokens or connection strings. Error messages must not
-  include request URLs that contain the ENTSO-E token.
-- **Git:** work on the branch for the current part (Part 2: `codex/ind320-part2`). Merge into `main`
-  only when the student asks. Do not commit `notes/`.
-- **Language:** code, comments, notebook and app text in English. Talk to the student in Norwegian.
-- **Comments:** every notebook cell and app function needs enough comments to be understood and
-  reproduced by someone who inherits the project. Explain the reasons, units and time zones.
-- **Versions** (course book): Python 3.12, PySpark 3.5.1 with `spark-cassandra-connector_2.12:3.5.1`,
-  Java 17, Cassandra in Docker.
-- **Time columns:** NVE `dato_Id` is the Sunday that ends the ISO week. `neste_Publiseringsdato` year 0001
-  means no date. ENTSO-E times are UTC; year and month are derived in `Europe/Oslo`. Always pass an
-  explicit date format when parsing.
-- **Units:** ENTSO-E physical flows are MW per direction (not netted). Convert to MWh with the
-  resolution (PT15M/PT60M) before summing. Never put different units on one y-axis.
-- **Plots:** Seaborn/Matplotlib with `dashboard.ui.chart_style()`. Draw one line per area or link, never
-  a single line that mixes areas.
-- **Ownership:** do not write the work log or the AI-usage statement as if you were the student. Give
-  facts and drafts that the student rewrites in their own words.
-- **Before submission:** re-read the current assignment text on Canvas (it may be revised), run all
-  notebook cells before the PDF export, and test every page of the deployed app.
+## Documentation
 
-## Sources
-
+- Streamlit API: https://docs.streamlit.io/develop/api-reference
+  (`st.navigation`, `st.columns`, `st.radio`, `st.pills`, `st.slider`, `st.expander`, `st.secrets`, caching)
+- pandas: https://pandas.pydata.org/docs/reference/ · Seaborn: https://seaborn.pydata.org/api.html
+- PySpark SQL: https://spark.apache.org/docs/3.5.1/api/python/reference/pyspark.sql/
+- Spark Cassandra Connector: https://github.com/datastax/spark-cassandra-connector
+- PyMongo: https://pymongo.readthedocs.io/ · MongoDB aggregation: https://www.mongodb.com/docs/manual/aggregation/
 - Course book: https://github.com/khliland/IND320 (`D2Dbook/2_Data_sources/2_Databases`, `7_Appendix/Installation.ipynb`)
 - NVE API: https://biapi.nve.no/magasinstatistikk/swagger/index.html
 - ENTSO-E API: https://documenter.getpostman.com/view/7009892/2s93JtP3F6
