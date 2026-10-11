@@ -1,4 +1,4 @@
-"""Shared presentation helpers for the four Streamlit pages."""
+"""Shared presentation helpers for all Streamlit pages."""
 
 import seaborn as sns
 import streamlit as st

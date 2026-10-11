@@ -1,11 +1,11 @@
-"""Overview of the CSV snapshot, with national metrics and a historical chart."""
+"""Overview of the live NVE data, with national metrics and a historical chart."""
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 import streamlit as st
 
-from data_utils import load_data, national_series
-from ui import ACCENT, chart_style, page_header
+from dashboard.nve_api import load_data, national_series
+from dashboard.ui import ACCENT, chart_style, page_header
 
 
 page_header("IND320 / NORWEGIAN RESERVOIRS", "Norway’s water reserves",
@@ -13,9 +13,9 @@ page_header("IND320 / NORWEGIAN RESERVOIRS", "Norway’s water reserves",
 frame = load_data()
 series = national_series(frame)
 latest = series.iloc[-1]
-st.caption(f"CSV snapshot · Latest national report: {latest['date']:%d %B %Y} · Norway total (NO, area 0)")
+st.caption(f"Live from the NVE API · Latest national report: {latest['date']:%d %B %Y} · Norway total (NO, area 0)")
 
-# These values come from the last date in the CSV, not a live data feed.
+# These values come from the newest week returned by the API (cached for six hours).
 for column, label, value, note in zip(
     st.columns(3),
     ["Reservoir fill level", "Stored energy", "Reservoir capacity"],
@@ -42,7 +42,7 @@ plt.close(figure)
 left, right = st.columns(2)
 with left, st.container(border=True):
     st.subheader("Understand the fields")
-    st.write(f"{len(frame):,} source rows, {len(frame.columns)} columns and nine geographic series.")
+    st.write(f"{len(frame):,} API records, {len(frame.columns)} fields and nine geographic series.")
     st.page_link("pages/data_table.py", label="Explore the data table", icon="📋")
 with right, st.container(border=True):
     st.subheader("Find a pattern")
