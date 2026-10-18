@@ -1,4 +1,4 @@
-"""Entry point for the six-page Streamlit app (IND320 Part 2)."""
+"""Entry point for the five-page Streamlit app (IND320 Part 2)."""
 
 import os
 import tempfile
@@ -22,16 +22,15 @@ with st.sidebar:
     st.caption("IND320 · Part 2\n\nReservoirs from the NVE API, cross-border flows from ENTSO-E.")
 
 # Streamlit renders this page list in the sidebar on every page.
-# Part 2: page 4 is the new NVE area page, the old page 4 (About) moved to page 5,
-# and page 6 reads the cross-border flows from MongoDB.
+# Part 2 (updated assignment, 12.10): pages 2 and 3 share the download-interval slider and the
+# area-type radio; page 4 shows the cross-border flows from MongoDB; About moved to page 5.
 navigation = st.navigation(
     [
         st.Page("src/pages/home.py", title="Home", icon="🏠", default=True),
         st.Page("src/pages/data_table.py", title="Data table", icon="📋"),
         st.Page("src/pages/data_plot.py", title="Data plot", icon="📈"),
-        st.Page("src/pages/reservoir_areas.py", title="Reservoir areas", icon="💧"),
-        st.Page("src/pages/about.py", title="About", icon="ℹ️"),
         st.Page("src/pages/cross_border.py", title="Cross-border flows", icon="🔌"),
+        st.Page("src/pages/about.py", title="About", icon="ℹ️"),
     ],
     position="sidebar",
 )

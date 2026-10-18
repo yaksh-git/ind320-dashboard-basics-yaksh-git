@@ -16,7 +16,8 @@ def show_areas_and_units() -> None:
         - **NO 0:** the total for Norway.
 
         The long time-series plots use **NO 0** so that a line follows the same area each week.
-        The *Reservoir areas* page draws one line per area of the chosen type.
+        On the *Data table* and *Data plot* pages you choose the interval and the area type;
+        they show one line per area of that type.
         """)
     with right, st.container(border=True):
         st.subheader("Read the units")
@@ -37,7 +38,7 @@ def show_data_sources() -> None:
         st.markdown("""
         | Pages | Source | How the app gets it |
         |---|---|---|
-        | Home, Data table, Data plot, Reservoir areas | [NVE Magasinstatistikk API](https://biapi.nve.no/magasinstatistikk/swagger/index.html) | Direct API request, cached for six hours |
+        | Home, Data table, Data plot | [NVE Magasinstatistikk API](https://biapi.nve.no/magasinstatistikk/swagger/index.html) | Direct API request, cached for six hours |
         | Cross-border flows | [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Notebook: API → Cassandra (Spark) → MongoDB; the app reads MongoDB |
         """)
 

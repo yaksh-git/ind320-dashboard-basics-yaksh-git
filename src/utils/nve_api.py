@@ -96,3 +96,23 @@ def load_areas() -> pd.DataFrame:
 def national_series(frame: pd.DataFrame) -> pd.DataFrame:
     """Use the source's national aggregate (NO, area 0) for time-series plots."""
     return frame.loc[(frame["area_type"] == "NO") & (frame["area_number"] == 0)].copy()
+
+
+def month_options(frame: pd.DataFrame) -> list[str]:
+    """All months with data, as "YYYY-MM" text, oldest first (options for the interval slider)."""
+    return frame["date"].dt.to_period("M").astype(str).unique().tolist()
+
+
+def select_interval(frame: pd.DataFrame, first_month: str, last_month: str) -> pd.DataFrame:
+    """Rows from the first to the last chosen month, both included ("YYYY-MM" text compares in order)."""
+    months = frame["date"].dt.to_period("M").astype(str)
+    return frame.loc[months.between(first_month, last_month)].copy()
+
+
+def areas_of_type(frame: pd.DataFrame, areas: pd.DataFrame, area_type: str) -> pd.DataFrame:
+    """Rows of one area type, with NVE's own area name (e.g. "NO 1", "VASS1") in a new "area" column."""
+    subset = frame.loc[frame["area_type"] == area_type].copy()
+    names = areas.set_index(["area_type", "area_number"])["name"].to_dict()
+    subset["area"] = [names.get((kind, int(number)), f"{kind} {number}")
+                      for kind, number in zip(subset["area_type"], subset["area_number"])]
+    return subset

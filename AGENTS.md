@@ -16,15 +16,16 @@ commented code over clever code, and explain changes in plain language.
 app.py                  entry point: page navigation only
 requirements.txt        app packages (installed by Streamlit Community Cloud)
 src/pages/              one file per Streamlit page
-src/utils/              shared code: nve_api.py (NVE API), flows_db.py (MongoDB), ui.py (styling)
+src/utils/              shared code: nve_api.py (NVE API), flows_db.py (MongoDB), controls.py
+                        (interval slider + area-type radio for pages 2–3), ui.py (styling)
 notebooks/              the part's notebook + requirements.txt with the notebook-only packages
 docs/part_<N>/          finished deliverables of earlier parts (do not edit)
 data/cache/             downloaded API data (Git-ignored, re-created by the notebook)
 .streamlit/             config.toml (theme); secrets.toml is local and Git-ignored
 ```
 
-Keep the repository root free of other files. Page order in `app.py` follows the assignment:
-4 Reservoir areas, 5 About, 6 Cross-border flows.
+Keep the repository root free of other files. Page order in `app.py` follows the assignment
+(updated 12.10): 1 Home, 2 Data table, 3 Data plot, 4 Cross-border flows, 5 About.
 
 ## How to write code
 
@@ -35,8 +36,8 @@ Keep the repository root free of other files. Page order in `app.py` follows the
 - **Docstrings and comments, always.** Every function has a one-line docstring that says what it
   returns or shows. Comments explain *why* (units, time zones, API quirks), not what the syntax does.
 - **Type hints** on all function parameters and return values (`pd.DataFrame`, `Figure`, `None`, …).
-- **Shared code.** Data access and styling live in `src/utils/`. Reuse `load_data()`,
-  `page_header()`, `chart_style()` and `show_figure()` instead of rewriting them.
+- **Shared code.** Data access, controls and styling live in `src/utils/`. Reuse `load_data()`,
+  `reservoir_controls()`, `page_header()`, `chart_style()` and `show_figure()` instead of rewriting them.
 - **Plots:** Seaborn/Matplotlib with `chart_style()`. One line per area or link. Label the axes with units.
 - **Notebook:** every cell starts with a comment; markdown before each section explains the
   purpose and the findings. Run all cells before the PDF export.

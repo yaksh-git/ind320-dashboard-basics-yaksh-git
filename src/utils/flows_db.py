@@ -60,20 +60,6 @@ def load_options() -> dict[str, list]:
 
 
 @st.cache_data(ttl=CACHE_SECONDS)
-def load_flows_for(neighbour: str) -> pd.DataFrame:
-    """Every link/direction pair on one connection, e.g. NO1 -> SE3 and SE3 -> NO1."""
-    pipeline = [
-        {"$match": {"neighbour": neighbour}},
-        {"$group": {"_id": {"from": "$from_area", "to": "$to_area", "direction": "$direction"}}},
-    ]
-    rows = [group["_id"] for group in get_collection().aggregate(pipeline)]
-    flows = pd.DataFrame(rows).rename(columns={"from": "from_area", "to": "to_area"})
-    flows["flow"] = flows["from_area"] + " → " + flows["to_area"]
-    # Exports first, then imports, each sorted by link name.
-    return flows.sort_values(["direction", "flow"], ascending=[True, True]).reset_index(drop=True)
-
-
-@st.cache_data(ttl=CACHE_SECONDS)
 def load_year_totals(neighbour: str, year: int) -> pd.DataFrame:
     """Total energy into and out of Norway for one connection and year.
 
@@ -90,16 +76,17 @@ def load_year_totals(neighbour: str, year: int) -> pd.DataFrame:
     return totals.rename(columns={"_id": "direction"})
 
 
-@st.cache_data(ttl=CACHE_SECONDS)
-def load_month(neighbour: str, year: int, month: int) -> pd.DataFrame:
-    """Hourly flows for every link and direction on one connection in one month."""
-    query = {"neighbour": neighbour, "year": year, "month": month}
-    projection = {"_id": 0, "time": 1, "link": 1, "from_area": 1, "to_area": 1,
-                  "direction": 1, "energy_mwh": 1}
+@st.cache_data(ttl=CACHE_SECONDS, show_spinner="Reading hourly flows from MongoDB…")
+def load_months(neighbour: str, year: int, months: tuple[int, ...]) -> pd.DataFrame:
+    """Hourly flows for every link and direction on one connection in the chosen months.
+
+    months is a tuple (not a list) because st.cache_data needs hashable arguments.
+    """
+    query = {"neighbour": neighbour, "year": year, "month": {"$in": list(months)}}
+    projection = {"_id": 0, "time": 1, "link": 1, "direction": 1, "energy_mwh": 1}
     frame = pd.DataFrame(list(get_collection().find(query, projection)))
     if frame.empty:
         return frame
     # PyMongo returns naive UTC datetimes; show them in Norwegian time.
     frame["time"] = pd.to_datetime(frame["time"], utc=True).dt.tz_convert("Europe/Oslo")
-    frame["flow"] = frame["from_area"] + " → " + frame["to_area"]
-    return frame.sort_values(["flow", "time"]).reset_index(drop=True)
+    return frame.sort_values(["link", "direction", "time"]).reset_index(drop=True)
