@@ -9,6 +9,7 @@ The data were fetched and prepared in the Part 2 notebook (ENTSO-E -> Cassandra/
 
 import calendar
 
+from matplotlib.dates import DateFormatter
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pandas as pd
@@ -23,6 +24,7 @@ from src.utils.ui import chart_style, page_header, show_figure
 
 # Fixed colours: imports and exports keep the same colour in every chart on this page.
 DIRECTION_COLORS = {"import": "#087F8C", "export": "#B35A12"}
+FIGURE_SIZE = (6, 4.6)  # same size in both columns, so the two charts line up
 
 
 def load_options_or_stop() -> dict[str, list]:
@@ -48,16 +50,19 @@ def yearly_pie_figure(totals: pd.DataFrame, neighbour: str, year: int) -> Figure
     """Pie chart of energy into and out of Norway; each slice shows its share and TWh."""
     totals = totals.sort_values("direction", ascending=False)  # import first, then export
     twh = totals["energy_mwh"] / 1e6  # 1 TWh = 1,000,000 MWh
-    figure, axis = plt.subplots(figsize=(5, 4.4))
-    axis.pie(
+    figure, axis = plt.subplots(figsize=FIGURE_SIZE)
+    wedges, _, _ = axis.pie(
         twh,
-        labels=[DIRECTION_LABELS[d] for d in totals["direction"]],
         colors=[DIRECTION_COLORS[d] for d in totals["direction"]],
         autopct=lambda share: f"{share:.0f}%\n{share * twh.sum() / 100:.2f} TWh",
+        pctdistance=0.68,  # place the numbers well inside each slice
         startangle=90, counterclock=False,
         wedgeprops={"edgecolor": "white", "linewidth": 2},
-        textprops={"color": "#12263A"},
+        textprops={"color": "white", "fontweight": "bold"},
     )
+    # A legend below the pie instead of labels next to it, so small slices stay readable.
+    axis.legend(wedges, [DIRECTION_LABELS[d] for d in totals["direction"]],
+                loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=2, frameon=False)
     axis.set_title(f"Norway ↔ {neighbour}, {year}")
     return figure
 
@@ -85,16 +90,21 @@ def show_yearly_balance(options: dict[str, list]) -> tuple[str, int]:
 # ---- Right column: hourly flows in one month ----
 
 def monthly_flows_figure(shown: pd.DataFrame, month: int, year: int) -> Figure:
-    """Hourly line plot: colour separates the links, solid = import and dashed = export."""
-    figure, axis = plt.subplots(figsize=(6, 4.4))
-    sns.lineplot(data=shown, x="time", y="energy_mwh", hue="flow", style="direction",
+    """Hourly line plot: colour shows the link, solid line = import and dashed line = export."""
+    figure, axis = plt.subplots(figsize=FIGURE_SIZE)
+    sns.lineplot(data=shown, x="time", y="energy_mwh", hue="link", style="direction",
                  style_order=["import", "export"], estimator=None, errorbar=None,
                  linewidth=1, ax=axis)
-    axis.set(title=f"{calendar.month_name[month]} {year}", xlabel="",
+    axis.set(title=f"{calendar.month_name[month]} {year}", xlabel="Day of month",
              ylabel="Energy per hour (MWh ≈ average MW)")
+    axis.xaxis.set_major_formatter(DateFormatter("%d", tz="Europe/Oslo"))  # 01, 02, ... 31
     axis.set_ylim(bottom=0)
-    axis.legend(fontsize=8, frameon=False, loc="upper left", bbox_to_anchor=(1.0, 1.0))
-    figure.autofmt_xdate()
+    # Legend below the plot, so the plot keeps the full column width. Seaborn adds the
+    # group titles "link" and "direction" as extra entries; leave them out.
+    handles, labels = axis.get_legend_handles_labels()
+    entries = [(h, l) for h, l in zip(handles, labels) if l not in ("link", "direction")]
+    axis.legend(*zip(*entries), loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3,
+                frameon=False, fontsize=8)
     sns.despine(ax=axis)
     return figure
 

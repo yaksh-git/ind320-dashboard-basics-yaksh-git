@@ -94,7 +94,7 @@ def load_year_totals(neighbour: str, year: int) -> pd.DataFrame:
 def load_month(neighbour: str, year: int, month: int) -> pd.DataFrame:
     """Hourly flows for every link and direction on one connection in one month."""
     query = {"neighbour": neighbour, "year": year, "month": month}
-    projection = {"_id": 0, "time": 1, "from_area": 1, "to_area": 1,
+    projection = {"_id": 0, "time": 1, "link": 1, "from_area": 1, "to_area": 1,
                   "direction": 1, "energy_mwh": 1}
     frame = pd.DataFrame(list(get_collection().find(query, projection)))
     if frame.empty:
