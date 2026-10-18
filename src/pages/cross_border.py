@@ -1,24 +1,25 @@
-"""Page 6 – Cross-border flows between Norway and its neighbours, read from MongoDB.
+"""Page 4 – Cross-border flows between Norway and its neighbours, read from MongoDB.
 
 Left column: radio buttons choose the connection (neighbour country) and a select box the
 year; a pie chart shows the energy that went into and out of Norway that year.
-Right column: pills choose the links and directions and a select box the month; a line
-plot shows the hourly flows. Below: an expander documents the data source.
+Right column: pills choose which months to include; a line plot shows the hourly flows for
+every link and direction, as in the notebook. Below: an expander documents the data source.
 The data were fetched and prepared in the Part 2 notebook (ENTSO-E -> Cassandra/Spark -> MongoDB).
 """
 
 import calendar
 
-from matplotlib.dates import DateFormatter
-import matplotlib.pyplot as plt
+from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
 import pandas as pd
 from pymongo.errors import PyMongoError
 import seaborn as sns
 import streamlit as st
 
-from src.utils.flows_db import (DIRECTION_LABELS, MissingSecrets, load_flows_for, load_month,
-                                load_options, load_year_totals)
+from src.utils.flows_db import (DIRECTION_LABELS, MissingSecrets, load_months, load_options,
+                                load_year_totals)
 from src.utils.ui import chart_style, page_header, show_figure
 
 
@@ -87,47 +88,53 @@ def show_yearly_balance(options: dict[str, list]) -> tuple[str, int]:
     return neighbour, year
 
 
-# ---- Right column: hourly flows in one month ----
+# ---- Right column: hourly flows in the chosen months ----
 
-def monthly_flows_figure(shown: pd.DataFrame, month: int, year: int) -> Figure:
-    """Hourly line plot: colour shows the link, solid line = import and dashed line = export."""
+LINE_STYLES = {"import": "-", "export": "--"}  # solid = into Norway, dashed = out of Norway
+
+
+def months_flows_figure(data: pd.DataFrame, title: str) -> Figure:
+    """Hourly line plot: colour shows the link, line style the direction (as in the notebook)."""
+    links = sorted(data["link"].unique())
+    colors = dict(zip(links, sns.color_palette(n_colors=len(links))))
     figure, axis = plt.subplots(figsize=FIGURE_SIZE)
-    sns.lineplot(data=shown, x="time", y="energy_mwh", hue="link", style="direction",
-                 style_order=["import", "export"], estimator=None, errorbar=None,
-                 linewidth=1, ax=axis)
-    axis.set(title=f"{calendar.month_name[month]} {year}", xlabel="Day of month",
-             ylabel="Energy per hour (MWh ≈ average MW)")
-    axis.xaxis.set_major_formatter(DateFormatter("%d", tz="Europe/Oslo"))  # 01, 02, ... 31
+    for (link, direction), group in data.groupby(["link", "direction"]):
+        # asfreq("h") adds empty hours between months that are not next to each other
+        # (e.g. January and July), so the line breaks there instead of jumping across the gap.
+        series = group.set_index("time")["energy_mwh"].asfreq("h")
+        axis.plot(series.index, series.to_numpy(), color=colors[link],
+                  linestyle=LINE_STYLES[direction], linewidth=0.9)
+    locator = AutoDateLocator(tz="Europe/Oslo")
+    axis.xaxis.set_major_locator(locator)
+    axis.xaxis.set_major_formatter(ConciseDateFormatter(locator, tz="Europe/Oslo"))
+    axis.set(title=title, xlabel="", ylabel="Energy per hour (MWh ≈ average MW)")
     axis.set_ylim(bottom=0)
-    # Legend below the plot, so the plot keeps the full column width. Seaborn adds the
-    # group titles "link" and "direction" as extra entries; leave them out.
-    handles, labels = axis.get_legend_handles_labels()
-    entries = [(h, l) for h, l in zip(handles, labels) if l not in ("link", "direction")]
-    axis.legend(*zip(*entries), loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3,
+    # One legend entry per link (colour) and per direction (line style), below the plot.
+    handles = [Line2D([], [], color=colors[link], label=link) for link in links]
+    handles += [Line2D([], [], color="#526477", linestyle=style, label=direction)
+                for direction, style in LINE_STYLES.items()]
+    axis.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3,
                 frameon=False, fontsize=8)
     sns.despine(ax=axis)
     return figure
 
 
-def show_monthly_flows(neighbour: str, year: int) -> None:
-    """Right column: pills for links/directions and a month box, then the line plot."""
-    st.subheader("Hourly flows in one month")
-    flows = load_flows_for(neighbour)["flow"].tolist()  # e.g. "NO1 → SE3", "SE3 → NO1"
-    # The key includes the connection, so the selection resets when the connection changes.
-    selected = st.pills("Links and directions", flows, selection_mode="multi",
-                        default=flows, key=f"pills_{neighbour}")
-    month = st.selectbox("Month", range(1, 13), format_func=lambda m: calendar.month_name[m])
-    st.caption(f"Connection and year follow the choices on the left: Norway ↔ {neighbour}, {year}.")
-
-    month_data = load_month(neighbour, year, month)
-    if not selected:
-        st.info("Select at least one link and direction.")
-    elif month_data.empty:
-        st.info("No data for this month.")
-    else:
-        # Combine connection + year (left), month and the selected links/directions (right).
-        shown = month_data.loc[month_data["flow"].isin(selected)]
-        show_figure(monthly_flows_figure(shown, month, year))
+def show_months_flows(neighbour: str, year: int) -> None:
+    """Right column: pills choose the months, then the line plot for those months."""
+    st.subheader("Hourly flows by month")
+    months = st.pills("Months to include", list(range(1, 13)), selection_mode="multi",
+                      default=[1], format_func=lambda m: calendar.month_abbr[m])
+    st.caption(f"Connection and year follow the choices on the left: Norway ↔ {neighbour}, {year}. "
+               "Months that are not next to each other leave a gap in the lines.")
+    if not months:
+        st.info("Select at least one month.")
+        return
+    data = load_months(neighbour, year, tuple(sorted(months)))
+    if data.empty:
+        st.info("No data for these months.")
+        return
+    names = ", ".join(calendar.month_abbr[m] for m in sorted(months))
+    show_figure(months_flows_figure(data, f"Norway ↔ {neighbour}, {year}: {names}"))
 
 
 # ---- Below the columns ----
@@ -152,7 +159,7 @@ def show_data_source() -> None:
 
 
 def render_page() -> None:
-    """Draw the page: two columns (yearly pie | monthly lines) and the data-source expander."""
+    """Draw the page: two columns (yearly pie | hourly lines) and the data-source expander."""
     chart_style()
     page_header("IND320 / CROSS-BORDER FLOWS", "Power across the border",
                 "Physical electricity flows between Norway and its neighbours, "
@@ -162,7 +169,7 @@ def render_page() -> None:
     with left, st.container(border=True):
         neighbour, year = show_yearly_balance(options)
     with right, st.container(border=True):
-        show_monthly_flows(neighbour, year)
+        show_months_flows(neighbour, year)
     show_data_source()
 
 

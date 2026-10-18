@@ -13,8 +13,8 @@ The app shows Norwegian reservoir levels from NVE and cross-border electricity f
 ## Data flow
 
 ```
-NVE Magasinstatistikk API ─────────────────────────────▶ app pages 1–4 (cached requests)
-ENTSO-E API ─▶ Spark ─▶ Cassandra ─▶ Spark ─▶ MongoDB ─▶ app page 6
+NVE Magasinstatistikk API ─────────────────────────────▶ app pages 1–3 (cached requests)
+ENTSO-E API ─▶ Spark ─▶ Cassandra ─▶ Spark ─▶ MongoDB ─▶ app page 4
 ```
 
 ## App pages
@@ -22,11 +22,14 @@ ENTSO-E API ─▶ Spark ─▶ Cassandra ─▶ Spark ─▶ MongoDB ─▶ app
 | # | Page | Content | Source |
 |---|---|---|---|
 | 1 | Home | Latest national report and long-term fill level | NVE API |
-| 2 | Data table | One row per API field with first-month sparklines | NVE API |
-| 3 | Data plot | Any field over a chosen month range | NVE API |
-| 4 | Reservoir areas | Interval slider + EL/NO/VASS radio, fill level per area | NVE API |
+| 2 | Data table | One row per area with a fill-level line (`LineChartColumn`), plus one row per API field | NVE API |
+| 3 | Data plot | Any field over time, one line per area | NVE API |
+| 4 | Cross-border flows | Yearly import/export pie (connection + year) and hourly flows for any set of months | MongoDB |
 | 5 | About | Areas, units and data sources (page 4 in Part 1) | – |
-| 6 | Cross-border flows | Yearly import/export pie and hourly flows per connection | MongoDB |
+
+Pages 2 and 3 share two controls: the **download interval** (month slider) and the **type of area**
+(`st.radio`: EL, NO, VASS). The NVE API has no date parameters, so the app downloads the full history
+once (cached) and keeps the chosen interval.
 
 ## Repository structure
 
@@ -38,6 +41,7 @@ src/
   utils/                shared code
     nve_api.py          NVE API requests and field names
     flows_db.py         MongoDB queries for the cross-border page
+    controls.py         shared interval slider and area-type radio (pages 2 and 3)
     ui.py               shared styling and chart helpers
 notebooks/
   ind320_part2.ipynb    Part 2 analysis and documentation
