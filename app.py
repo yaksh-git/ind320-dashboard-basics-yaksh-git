@@ -14,6 +14,7 @@ os.environ["MPLCONFIGDIR"] = str(mpl_cache)
 
 st.set_page_config(page_title="Norwegian Reservoir Dashboard", layout="wide")
 
+# Imported here, after MPLCONFIGDIR is set above: ui.py imports Matplotlib, which reads it on import.
 from src.utils.ui import setup_ui
 
 setup_ui()

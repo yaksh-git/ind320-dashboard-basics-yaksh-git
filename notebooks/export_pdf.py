@@ -19,13 +19,16 @@ NOTEBOOK = ROOT / "notebooks" / "ind320_part2.ipynb"
 OUTPUT = ROOT / "output"
 CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
-# On paper there is no sideways scrolling: wrap long code and output lines instead of cutting
-# them off, use A4 pages, and keep each figure on one page.
+# On paper there is no sideways scrolling: wrap long code lines instead of cutting them off,
+# print text output and tables a bit smaller so wide Spark/pandas tables fit the page width,
+# use A4 pages, and keep each figure on one page.
 PRINT_CSS = """<style>
 @page { size: A4; margin: 14mm 12mm; }
 @media print {
   pre, code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
-  .jp-OutputArea-output pre { font-size: 85%; }
+  .jp-OutputArea-output { overflow: visible !important; }
+  .jp-OutputArea-output pre { font-size: 72% !important; }
+  .jp-OutputArea-output table { font-size: 72% !important; }  /* output tables only, not markdown */
   img { break-inside: avoid; max-width: 100% !important; }
 }
 </style>

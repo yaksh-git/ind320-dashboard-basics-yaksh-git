@@ -8,6 +8,8 @@ The data were fetched and prepared in the Part 2 notebook (ENTSO-E -> Cassandra/
 """
 
 import calendar
+from collections.abc import Callable
+from typing import Any
 
 import altair as alt
 from matplotlib.figure import Figure
@@ -26,17 +28,21 @@ DIRECTION_COLORS = {"import": "#087F8C", "export": "#B35A12"}
 PIE_SIZE = (6, 4.6)  # inches; Streamlit scales the figure to the column width
 
 
-def load_options_or_stop() -> dict[str, list]:
-    """Connections and years from MongoDB; stop the page with a clear message on problems."""
+def read_mongo(loader: Callable[..., Any], *args: Any) -> Any:
+    """Run one MongoDB read; on problems show a short message instead of a traceback and stop the page."""
     try:
-        options = load_options()
+        return loader(*args)
     except MissingSecrets as error:
         st.error(f"MongoDB is not configured: {error}")
-        st.stop()
-    except PyMongoError as error:  # wrong password, IP not allowed in Atlas, network problems, ...
+    except PyMongoError as error:  # wrong password, IP not allowed in Atlas, paused cluster, network ...
         st.error(f"Could not read from MongoDB ({type(error).__name__}). Check the connection "
                  "string and that Atlas Network Access allows this app.")
-        st.stop()
+    st.stop()
+
+
+def load_options_or_stop() -> dict[str, list]:
+    """Connections and years from MongoDB; stop the page with a clear message if there are none."""
+    options = read_mongo(load_options)
     if not options["neighbours"]:
         st.warning("The MongoDB collection is empty. Run the Part 2 notebook to fill it.")
         st.stop()
@@ -46,22 +52,25 @@ def load_options_or_stop() -> dict[str, list]:
 # ---- Left column: yearly balance ----
 
 def yearly_pie_figure(totals: pd.DataFrame, neighbour: str, year: int) -> Figure:
-    """Pie chart of energy into and out of Norway; each slice shows its share and TWh."""
+    """Pie chart of energy into and out of Norway; the legend gives every slice's TWh and share."""
     totals = totals.sort_values("direction", ascending=False)  # import first, then export
     twh = totals["energy_mwh"] / 1e6  # 1 TWh = 1,000,000 MWh
+    shares = twh / twh.sum() * 100
     figure, axis = plt.subplots(figsize=PIE_SIZE)
     wedges, _, _ = axis.pie(
         twh,
         colors=[DIRECTION_COLORS[d] for d in totals["direction"]],
-        autopct=lambda share: f"{share:.0f}%\n{share * twh.sum() / 100:.2f} TWh",
+        # Text inside a slice only when the slice is big enough to hold it (e.g. a 3 % import
+        # slice is too thin); the legend below always shows the numbers.
+        autopct=lambda share: f"{share:.0f}%\n{share * twh.sum() / 100:.2f} TWh" if share >= 15 else "",
         pctdistance=0.68,  # place the numbers well inside each slice
         startangle=90, counterclock=False,
         wedgeprops={"edgecolor": "white", "linewidth": 2},
         textprops={"color": "white", "fontweight": "bold"},
     )
-    # A legend below the pie instead of labels next to it, so small slices stay readable.
-    axis.legend(wedges, [DIRECTION_LABELS[d] for d in totals["direction"]],
-                loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=2, frameon=False)
+    labels = [f"{DIRECTION_LABELS[d]}: {value:.2f} TWh ({share:.0f}%)"
+              for d, value, share in zip(totals["direction"], twh, shares)]
+    axis.legend(wedges, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=1, frameon=False)
     axis.set_title(f"Norway ↔ {neighbour}, {year}")
     return figure
 
@@ -73,7 +82,7 @@ def show_yearly_balance(options: dict[str, list]) -> tuple[str, int]:
                          format_func=lambda name: f"Norway ↔ {name}")
     year = st.selectbox("Year", options["years"], index=len(options["years"]) - 1)
 
-    totals = load_year_totals(neighbour, year)  # MongoDB sums the hours per direction
+    totals = read_mongo(load_year_totals, neighbour, year)  # MongoDB sums the hours per direction
     if totals.empty or totals["energy_mwh"].sum() == 0:
         st.info("No flow recorded for this connection and year.")
         return neighbour, year
@@ -104,6 +113,16 @@ def month_segments(months: list[int]) -> dict[int, int]:
             segment += 1
         segments[month], previous = segment, month
     return segments
+
+
+def month_label(months: list[int]) -> str:
+    """Short text for the chosen months: consecutive months as a range, e.g. "Jan–Mar, Jul"."""
+    runs: dict[int, list[int]] = {}
+    for month, segment in month_segments(months).items():
+        runs.setdefault(segment, []).append(month)
+    names = [calendar.month_abbr[run[0]] if len(run) == 1
+             else f"{calendar.month_abbr[run[0]]}–{calendar.month_abbr[run[-1]]}" for run in runs.values()]
+    return ", ".join(names)
 
 
 def chart_data(data: pd.DataFrame, months: list[int], resolution: str) -> pd.DataFrame:
@@ -160,13 +179,12 @@ def show_months_flows(neighbour: str, year: int) -> None:
     if not months:
         st.info("Select at least one month.")
         return
-    data = load_months(neighbour, year, tuple(sorted(months)))
+    data = read_mongo(load_months, neighbour, year, tuple(sorted(months)))
     if data.empty:
         st.info("No data for these months.")
         return
-    names = ", ".join(calendar.month_abbr[m] for m in sorted(months))
     resolution = resolution or "Daily mean"  # the toggle returns None if it is clicked off
-    title = f"Norway ↔ {neighbour}, {year}: {names} ({resolution.lower()})"
+    title = f"Norway ↔ {neighbour}, {year}: {month_label(months)} ({resolution.lower()})"
     chart = months_flows_chart(chart_data(data, months, resolution), title)
     st.altair_chart(chart, width="stretch")
 

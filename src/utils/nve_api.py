@@ -2,8 +2,10 @@
 
 Part 1 read a fixed CSV snapshot. Part 2 replaces that file with requests to
 https://biapi.nve.no/magasinstatistikk, so every page shows the latest weekly report.
-The API needs no key and has no query parameters: each call returns the full history.
+The API needs no key and has no query parameters: HentOffentligData returns the full history.
 """
+
+from collections.abc import Callable
 
 import pandas as pd
 import requests
@@ -91,6 +93,16 @@ def load_areas() -> pd.DataFrame:
         "omrType": "area_type",
         "omrnr": "area_number",
     })
+
+
+def nve_or_stop(loader: Callable[[], pd.DataFrame]) -> pd.DataFrame:
+    """Run an NVE loader; if the API cannot be reached, show a short message instead of a traceback."""
+    try:
+        return loader()
+    except requests.RequestException as error:  # timeout, no network, HTTP 4xx/5xx from NVE
+        st.error(f"Could not download data from the NVE API ({type(error).__name__}). "
+                 "Please try again in a minute.")
+        st.stop()
 
 
 def national_series(frame: pd.DataFrame) -> pd.DataFrame:

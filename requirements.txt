@@ -6,3 +6,5 @@ seaborn>=0.13,<0.14
 numpy>=2.0,<3
 requests>=2.32,<3
 pymongo>=4.10,<5
+# Interactive month chart on the cross-border page (also installed with Streamlit).
+altair>=5,<7

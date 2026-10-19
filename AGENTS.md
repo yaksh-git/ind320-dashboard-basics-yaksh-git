@@ -18,7 +18,7 @@ requirements.txt        app packages (installed by Streamlit Community Cloud)
 src/pages/              one file per Streamlit page
 src/utils/              shared code: nve_api.py (NVE API), flows_db.py (MongoDB), controls.py
                         (interval slider + area-type radio for pages 2–3), ui.py (styling)
-notebooks/              the part's notebook + requirements.txt with the notebook-only packages
+notebooks/              the part's notebook, requirements.txt (notebook-only packages), export_pdf.py (PDF export)
 docs/part_<N>/          finished deliverables of earlier parts (do not edit)
 data/cache/             downloaded API data (Git-ignored, re-created by the notebook)
 .streamlit/             config.toml (theme); secrets.toml is local and Git-ignored
@@ -38,7 +38,8 @@ Keep the repository root free of other files. Page order in `app.py` follows the
 - **Type hints** on all function parameters and return values (`pd.DataFrame`, `Figure`, `None`, …).
 - **Shared code.** Data access, controls and styling live in `src/utils/`. Reuse `load_data()`,
   `reservoir_controls()`, `page_header()`, `chart_style()` and `show_figure()` instead of rewriting them.
-- **Plots:** Seaborn/Matplotlib with `chart_style()`. One line per area or link. Label the axes with units.
+- **Plots:** Seaborn/Matplotlib with `chart_style()`; the interactive month chart on the cross-border page uses
+  Altair. One line per area or link. Label the axes with units.
 - **Notebook:** every cell starts with a comment; markdown before each section explains the
   purpose and the findings. Run all cells before the PDF export.
 
@@ -52,14 +53,15 @@ Keep the repository root free of other files. Page order in `app.py` follows the
   describing the change to the student and getting an OK.
 - Do **not** push to `main` or merge without the student's approval. Work on the part branch
   (Part 2: `codex/ind320-part2`).
-- Do **not** write the work log or the AI-usage statement as if you were the student. Give facts.
+- Do **not** write the work log or the AI-usage statement unless the student asks. A draft must be based on what
+  actually happened and reviewed by the student, and the AI-usage section must say which parts AI helped draft.
 - Do **not** commit `notes/` (private notes) or files in `data/cache/`.
 
 ## Data facts that are easy to get wrong
 
 - NVE `dato_Id` is the Sunday that ends the ISO week. `neste_Publiseringsdato` year `0001` means no date.
   Always pass an explicit format to `pd.to_datetime`.
-- The NVE API has no query parameters: every call returns the full history.
+- The NVE API has no query parameters: `HentOffentligData` returns the full history in one call.
 - ENTSO-E physical flows are MW per direction (not netted), at 15 or 60 minute resolution. Convert to
   MWh with the resolution before summing. One request may cover at most one year.
 - Store times in UTC; derive year and month in `Europe/Oslo`.

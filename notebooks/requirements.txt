@@ -4,7 +4,7 @@
 pyspark==3.5.1
 pyarrow>=15,<22
 cassandra-driver>=3.29,<4
-# cassandra-driver still imports setuptools-provided modules on Python 3.12.
+# PySpark 3.5 still imports distutils (removed in Python 3.12); setuptools provides it.
 setuptools
 ipykernel>=6.29,<8
 nbformat>=5.10,<6
