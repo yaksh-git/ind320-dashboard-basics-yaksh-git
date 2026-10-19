@@ -46,6 +46,7 @@ src/
 notebooks/
   ind320_part2.ipynb    Part 2 analysis and documentation
   requirements.txt      extra packages for the notebook (PySpark, Cassandra driver)
+  export_pdf.py         notebook -> PDF (nbconvert + headless Chrome)
 docs/part_1/            Part 1 deliverables
 ```
 
@@ -77,7 +78,12 @@ On Streamlit Community Cloud, paste the `[mongo]` section into *App settings →
 1. Start Cassandra in Docker: `docker run --name my_cassandra -p 9042:9042 -d cassandra:latest`
    (later: `docker start my_cassandra`).
 2. Install Java 17 (PySpark needs it). Spark downloads the Cassandra connector automatically.
-3. Run all cells, then export to PDF.
+3. Run all cells, then export to PDF (HTML via nbconvert, printed with headless Google Chrome;
+   the files are written to `output/`, which Git ignores):
+
+   ```bash
+   .venv/bin/python notebooks/export_pdf.py
+   ```
 
 **Data sources:** [NVE Magasinstatistikk](https://www.nve.no/energi/analyser-og-statistikk/magasinstatistikk/) ·
 [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/)

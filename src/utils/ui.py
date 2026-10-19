@@ -24,6 +24,12 @@ def setup_ui() -> None:
     """, unsafe_allow_html=True)
 
 
+def wide_page(max_width_px: int = 1500) -> None:
+    """Let the current page use more of the screen than the default 1180 px (e.g. two charts side by side)."""
+    st.markdown(f"<style>.block-container {{ max-width: {max_width_px}px; }}</style>",
+                unsafe_allow_html=True)
+
+
 def page_header(section: str, title: str, description: str) -> None:
     """Draw the same three-level heading (small label, title, caption) on every page."""
     st.markdown(f'<div class="eyebrow">{section}</div>', unsafe_allow_html=True)

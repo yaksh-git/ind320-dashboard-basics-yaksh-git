@@ -70,6 +70,8 @@ Keep the repository root free of other files. Page order in `app.py` follows the
 uv venv --python 3.12 .venv && uv pip install -r notebooks/requirements.txt
 .venv/bin/python -m streamlit run app.py
 docker start my_cassandra   # first time: docker run --name my_cassandra -p 9042:9042 -d cassandra:latest
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/ind320_part2.ipynb
+.venv/bin/python notebooks/export_pdf.py   # PDF in output/ (Git-ignored)
 ```
 
 Versions follow the course book: Python 3.12, PySpark 3.5.1 with
