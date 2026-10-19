@@ -9,7 +9,7 @@ from matplotlib.ticker import PercentFormatter
 import pandas as pd
 import streamlit as st
 
-from src.utils.nve_api import load_data, national_series
+from src.utils.nve_api import load_data, national_series, nve_or_stop
 from src.utils.ui import ACCENT, chart_style, page_header, show_figure
 
 
@@ -56,7 +56,7 @@ def render_page() -> None:
     """Draw the page: header, newest values, long-term chart and links to other pages."""
     page_header("IND320 / NORWEGIAN RESERVOIRS", "Norway’s water reserves",
                 "Explore weekly reservoir levels, understand the data, and compare trends over time.")
-    frame = load_data()              # all areas, cached for six hours
+    frame = nve_or_stop(load_data)   # all areas, cached for six hours
     series = national_series(frame)  # Norway total (NO, area 0)
     latest = series.iloc[-1]         # the newest week returned by the API
     st.caption(f"Live from the NVE API · Latest national report: {latest['date']:%d %B %Y} "

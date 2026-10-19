@@ -31,7 +31,7 @@ def reservoir_controls(months: list[str]) -> tuple[str, str, str]:
 
     with st.container(border=True):
         # The stored values are passed as value=/index=, so both pages start from the same
-        # choice. (value= must be a tuple for Streamlit to draw a range slider with two handles.)
+        # choice. (A value with two items, (start, end), makes Streamlit draw a range slider.)
         first, last = st.select_slider(
             "Download interval (months, inclusive)", options=months,
             value=st.session_state[INTERVAL_KEY], key="interval_widget",
@@ -43,7 +43,7 @@ def reservoir_controls(months: list[str]) -> tuple[str, str, str]:
             on_change=_remember, args=("area_type_widget", AREA_TYPE_KEY),
         )
         # Explain why a slider is enough: the API itself cannot filter by date.
-        st.caption("NVE's API has no date parameters: every request returns the full history. "
+        st.caption("NVE's API has no date parameters: the endpoint used here returns the full history. "
                    "The app downloads it once (cached for six hours) and keeps only this interval. "
                    "The choices apply to both the Data table and the Data plot page.")
     return first, last, area_type

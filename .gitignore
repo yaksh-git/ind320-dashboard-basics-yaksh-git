@@ -17,3 +17,5 @@ data/cache/
 .claude/settings.local.json
 # macOS folder metadata
 .DS_Store
+# Private notes (never part of the submission).
+notes/

@@ -15,7 +15,7 @@ import streamlit as st
 
 from src.utils.controls import reservoir_controls
 from src.utils.nve_api import (NUMERIC_COLUMNS, PLOT_LABELS, areas_of_type, load_areas,
-                               load_data, month_options, select_interval)
+                               load_data, month_options, nve_or_stop, select_interval)
 from src.utils.ui import ACCENT, chart_style, page_header, show_figure
 
 
@@ -155,8 +155,8 @@ def render_page() -> None:
     chart_style()
     page_header("IND320 / INTERACTIVE PLOTS", "Explore the trends",
                 "Follow the reservoir measurements over time, one line per area.")
-    frame = load_data()   # full history, cached (src/utils/nve_api.py)
-    areas = load_areas()  # area names (HentOmråder)
+    frame = nve_or_stop(load_data)   # full history, cached (src/utils/nve_api.py)
+    areas = nve_or_stop(load_areas)  # area names (HentOmråder)
     first, last, area_type = reservoir_controls(month_options(frame))
     field = choose_field(frame.columns.tolist())
 

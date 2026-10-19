@@ -24,7 +24,7 @@ ENTSO-E API ─▶ Spark ─▶ Cassandra ─▶ Spark ─▶ MongoDB ─▶ app
 | 1 | Home | Latest national report and long-term fill level | NVE API |
 | 2 | Data table | One row per area with a fill-level line (`LineChartColumn`), plus one row per API field | NVE API |
 | 3 | Data plot | Any field over time, one line per area | NVE API |
-| 4 | Cross-border flows | Yearly import/export pie (connection + year) and hourly flows for any set of months | MongoDB |
+| 4 | Cross-border flows | Yearly import/export pie (connection + year) and an interactive chart of hourly or daily-mean flows for any set of months | MongoDB |
 | 5 | About | Areas, units and data sources (page 4 in Part 1) | – |
 
 Pages 2 and 3 share two controls: the **download interval** (month slider) and the **type of area**

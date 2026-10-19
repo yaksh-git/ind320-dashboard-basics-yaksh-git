@@ -9,7 +9,7 @@ import streamlit as st
 
 from src.utils.controls import reservoir_controls
 from src.utils.nve_api import (areas_of_type, load_areas, load_data, month_options,
-                               national_series, select_interval)
+                               national_series, nve_or_stop, select_interval)
 from src.utils.ui import ACCENT, page_header
 
 
@@ -105,8 +105,8 @@ def render_page() -> None:
     """Draw the page: shared controls, key figures, the area table, the field table and raw data."""
     page_header("IND320 / DATA TABLE", "Get to know the data",
                 "Fill level for every area of one type, and an overview of the API fields.")
-    frame = load_data()   # full history, cached (src/utils/nve_api.py)
-    areas = load_areas()  # area names and descriptions (HentOmråder)
+    frame = nve_or_stop(load_data)   # full history, cached (src/utils/nve_api.py)
+    areas = nve_or_stop(load_areas)  # area names and descriptions (HentOmråder)
     first, last, area_type = reservoir_controls(month_options(frame))
     rows = select_interval(frame, first, last)        # all areas in the interval
     subset = areas_of_type(rows, areas, area_type)  # only the chosen area type

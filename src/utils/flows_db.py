@@ -80,7 +80,8 @@ def load_year_totals(neighbour: str, year: int) -> pd.DataFrame:
 def load_months(neighbour: str, year: int, months: tuple[int, ...]) -> pd.DataFrame:
     """Hourly flows for every link and direction on one connection in the chosen months.
 
-    months is a tuple (not a list) because st.cache_data needs hashable arguments.
+    months is passed as a sorted tuple, so the same set of months reuses one cache entry
+    whatever order the pills were clicked in.
     """
     query = {"neighbour": neighbour, "year": year, "month": {"$in": list(months)}}
     projection = {"_id": 0, "time": 1, "link": 1, "direction": 1, "energy_mwh": 1}
