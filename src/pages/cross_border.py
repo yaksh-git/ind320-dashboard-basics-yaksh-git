@@ -2,30 +2,28 @@
 
 Left column: radio buttons choose the connection (neighbour country) and a select box the
 year; a pie chart shows the energy that went into and out of Norway that year.
-Right column: pills choose which months to include; a line plot shows the hourly flows for
-every link and direction, as in the notebook. Below: an expander documents the data source.
+Right column: pills choose which months to include; an interactive line chart (Altair) shows the
+flows for every link and direction, as in the notebook. Below: an expander documents the data source.
 The data were fetched and prepared in the Part 2 notebook (ENTSO-E -> Cassandra/Spark -> MongoDB).
 """
 
 import calendar
 
-from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
+import altair as alt
 from matplotlib.figure import Figure
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import pandas as pd
 from pymongo.errors import PyMongoError
-import seaborn as sns
 import streamlit as st
 
 from src.utils.flows_db import (DIRECTION_LABELS, MissingSecrets, load_months, load_options,
                                 load_year_totals)
-from src.utils.ui import chart_style, page_header, show_figure
+from src.utils.ui import chart_style, page_header, show_figure, wide_page
 
 
 # Fixed colours: imports and exports keep the same colour in every chart on this page.
 DIRECTION_COLORS = {"import": "#087F8C", "export": "#B35A12"}
-FIGURE_SIZE = (6, 4.6)  # same size in both columns, so the two charts line up
+PIE_SIZE = (6, 4.6)  # inches; Streamlit scales the figure to the column width
 
 
 def load_options_or_stop() -> dict[str, list]:
@@ -51,7 +49,7 @@ def yearly_pie_figure(totals: pd.DataFrame, neighbour: str, year: int) -> Figure
     """Pie chart of energy into and out of Norway; each slice shows its share and TWh."""
     totals = totals.sort_values("direction", ascending=False)  # import first, then export
     twh = totals["energy_mwh"] / 1e6  # 1 TWh = 1,000,000 MWh
-    figure, axis = plt.subplots(figsize=FIGURE_SIZE)
+    figure, axis = plt.subplots(figsize=PIE_SIZE)
     wedges, _, _ = axis.pie(
         twh,
         colors=[DIRECTION_COLORS[d] for d in totals["direction"]],
@@ -88,44 +86,77 @@ def show_yearly_balance(options: dict[str, list]) -> tuple[str, int]:
     return neighbour, year
 
 
-# ---- Right column: hourly flows in the chosen months ----
+# ---- Right column: flows in the chosen months ----
 
-LINE_STYLES = {"import": "-", "export": "--"}  # solid = into Norway, dashed = out of Norway
+RESOLUTIONS = ["Hourly", "Daily mean"]
+Y_TITLE = "Energy per hour (MWh ≈ average MW)"
 
 
-def months_flows_figure(data: pd.DataFrame, title: str) -> Figure:
-    """Hourly line plot: colour shows the link, line style the direction (as in the notebook)."""
-    links = sorted(data["link"].unique())
-    colors = dict(zip(links, sns.color_palette(n_colors=len(links))))
-    figure, axis = plt.subplots(figsize=FIGURE_SIZE)
-    for (link, direction), group in data.groupby(["link", "direction"]):
-        # asfreq("h") adds empty hours between months that are not next to each other
-        # (e.g. January and July), so the line breaks there instead of jumping across the gap.
-        series = group.set_index("time")["energy_mwh"].asfreq("h")
-        axis.plot(series.index, series.to_numpy(), color=colors[link],
-                  linestyle=LINE_STYLES[direction], linewidth=0.9)
-    locator = AutoDateLocator(tz="Europe/Oslo")
-    axis.xaxis.set_major_locator(locator)
-    axis.xaxis.set_major_formatter(ConciseDateFormatter(locator, tz="Europe/Oslo"))
-    axis.set(title=title, xlabel="", ylabel="Energy per hour (MWh ≈ average MW)")
-    axis.set_ylim(bottom=0)
-    # One legend entry per link (colour) and per direction (line style), below the plot.
-    handles = [Line2D([], [], color=colors[link], label=link) for link in links]
-    handles += [Line2D([], [], color="#526477", linestyle=style, label=direction)
-                for direction, style in LINE_STYLES.items()]
-    axis.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3,
-                frameon=False, fontsize=8)
-    sns.despine(ax=axis)
-    return figure
+def month_segments(months: list[int]) -> dict[int, int]:
+    """Give each chosen month a segment number; a new segment starts after a gap (e.g. Jan | Jul).
+
+    The chart draws one line per segment, so it breaks between months that are not next to
+    each other instead of drawing a straight line across the missing months.
+    """
+    segments, segment, previous = {}, 0, None
+    for month in sorted(months):
+        if previous is not None and month != previous + 1:
+            segment += 1
+        segments[month], previous = segment, month
+    return segments
+
+
+def chart_data(data: pd.DataFrame, months: list[int], resolution: str) -> pd.DataFrame:
+    """Hourly or daily-mean values per link and direction, ready for the Altair chart."""
+    frame = data
+    if resolution == "Daily mean":
+        # The mean of the hourly MWh values over a day is still MWh per hour (≈ average MW).
+        frame = (data.set_index("time").groupby(["link", "direction"])["energy_mwh"]
+                 .resample("D").mean().dropna().reset_index())
+    frame = frame.assign(segment=frame["time"].dt.month.map(month_segments(months)))
+    time_format = "%d %b %Y %H:%M" if resolution == "Hourly" else "%d %b %Y"
+    frame["when"] = frame["time"].dt.strftime(time_format)  # readable time for the tooltip
+    # Norwegian wall-clock time without a zone label, shown as is (see the utc scale below).
+    frame["time"] = frame["time"].dt.tz_localize(None)
+    return frame
+
+
+def months_flows_chart(frame: pd.DataFrame, title: str) -> alt.Chart:
+    """Interactive line chart: colour = link, solid = import, dashed = export (as in the notebook).
+
+    Hover over a line to see the values; scroll or drag to zoom and move along the time axis.
+    """
+    return (
+        alt.Chart(frame, title=title)
+        .mark_line(strokeWidth=1.3)
+        .encode(
+            # A utc scale shows the times exactly as given, whatever time zone the viewer is in.
+            x=alt.X("time:T", scale=alt.Scale(type="utc"), axis=alt.Axis(format="%d %b", title=None)),
+            y=alt.Y("energy_mwh:Q", title=Y_TITLE),
+            color=alt.Color("link:N", title="Link", legend=alt.Legend(orient="bottom")),
+            strokeDash=alt.StrokeDash(  # own legend above the chart, so it is not cut off
+                "direction:N", title="Direction", legend=alt.Legend(orient="top", direction="horizontal"),
+                scale=alt.Scale(domain=["import", "export"], range=[[1, 0], [6, 3]])),
+            detail="segment:N",  # separate line pieces for months that are not adjacent
+            tooltip=[alt.Tooltip("when:N", title="Time"), alt.Tooltip("link:N", title="Link"),
+                     alt.Tooltip("direction:N", title="Direction"),
+                     alt.Tooltip("energy_mwh:Q", title="MWh per hour", format=",.0f")],
+        )
+        .properties(height=440)
+        .interactive(bind_y=False)  # zoom and pan along the time axis only
+    )
 
 
 def show_months_flows(neighbour: str, year: int) -> None:
-    """Right column: pills choose the months, then the line plot for those months."""
-    st.subheader("Hourly flows by month")
+    """Right column: pills choose the months and a toggle the resolution, then the line chart."""
+    st.subheader("Flows by month")
     months = st.pills("Months to include", list(range(1, 13)), selection_mode="multi",
                       default=[1], format_func=lambda m: calendar.month_abbr[m])
+    # Daily means give calm, readable lines; "Hourly" shows every hour, as in the notebook.
+    resolution = st.segmented_control("Resolution", RESOLUTIONS, default="Daily mean")
     st.caption(f"Connection and year follow the choices on the left: Norway ↔ {neighbour}, {year}. "
-               "Months that are not next to each other leave a gap in the lines.")
+               "Hover for values; scroll to zoom in time. Months that are not next to each other "
+               "leave a gap in the lines.")
     if not months:
         st.info("Select at least one month.")
         return
@@ -134,7 +165,10 @@ def show_months_flows(neighbour: str, year: int) -> None:
         st.info("No data for these months.")
         return
     names = ", ".join(calendar.month_abbr[m] for m in sorted(months))
-    show_figure(months_flows_figure(data, f"Norway ↔ {neighbour}, {year}: {names}"))
+    resolution = resolution or "Daily mean"  # the toggle returns None if it is clicked off
+    title = f"Norway ↔ {neighbour}, {year}: {names} ({resolution.lower()})"
+    chart = months_flows_chart(chart_data(data, months, resolution), title)
+    st.altair_chart(chart, width="stretch")
 
 
 # ---- Below the columns ----
@@ -159,13 +193,14 @@ def show_data_source() -> None:
 
 
 def render_page() -> None:
-    """Draw the page: two columns (yearly pie | hourly lines) and the data-source expander."""
+    """Draw the page: two columns (yearly pie | line chart by month) and the data-source expander."""
     chart_style()
     page_header("IND320 / CROSS-BORDER FLOWS", "Power across the border",
                 "Physical electricity flows between Norway and its neighbours, "
                 "from ENTSO-E via MongoDB.")
+    wide_page()  # two charts side by side need more width than the other pages
     options = load_options_or_stop()
-    left, right = st.columns(2, gap="large")
+    left, right = st.columns([2, 3], gap="large")  # the line chart gets the larger share
     with left, st.container(border=True):
         neighbour, year = show_yearly_balance(options)
     with right, st.container(border=True):
