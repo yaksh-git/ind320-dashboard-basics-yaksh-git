@@ -7,6 +7,7 @@ The app shows Norwegian reservoir levels from NVE and cross-border electricity f
 |---|---|
 | 🌐 **Live app** | https://ind320-dashboard-basics-yaksh-git.streamlit.app/ |
 | 📓 **Part 2 notebook** | [`notebooks/ind320_part2.ipynb`](notebooks/ind320_part2.ipynb) |
+| 🎬 **Part 2 screencast** | [`docs/part_2/screencast_part2.mp4`](docs/part_2/screencast_part2.mp4) |
 | 📁 **Part 1 (archived)** | [`docs/part_1/`](docs/part_1/): notebook and [screencast](docs/part_1/screencast_part1.mp4) |
 | 🤖 **Rules for AI agents** | [`AGENTS.md`](AGENTS.md) |
 
@@ -48,6 +49,7 @@ notebooks/
   requirements.txt      extra packages for the notebook (PySpark, Cassandra driver)
   export_pdf.py         notebook -> PDF (nbconvert + headless Chrome)
 docs/part_1/            Part 1 deliverables
+docs/part_2/            Part 2 screencast
 ```
 
 ## Run locally
