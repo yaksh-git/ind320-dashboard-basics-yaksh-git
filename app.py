@@ -1,4 +1,4 @@
-"""Entry point for the five-page Streamlit app (IND320 Part 2)."""
+"""Entry point for the seven-page Streamlit app (IND320 Part 3)."""
 
 import os
 import tempfile
@@ -20,19 +20,30 @@ from src.utils.ui import setup_ui
 setup_ui()
 with st.sidebar:
     st.markdown("### Norwegian power data")
-    st.caption("IND320 · Part 2\n\nReservoirs from the NVE API, cross-border flows from ENTSO-E.")
+    st.caption("IND320 · Part 3\n\nReservoirs from the NVE API, weather from Open-Meteo, "
+               "cross-border flows from ENTSO-E.")
 
-# Streamlit renders this page list in the sidebar on every page.
-# Part 2 (updated assignment, 12.10): pages 2 and 3 share the download-interval slider and the
-# area-type radio; page 4 shows the cross-border flows from MongoDB; About moved to page 5.
+# Streamlit renders this page list in the sidebar on every page, grouped by data source.
+# Part 3: the reservoir pages come first, followed by the fill-level analysis (same NVE data) and
+# the weather page; the type of area is shared by pages 2-5 (src/utils/controls.py).
 navigation = st.navigation(
-    [
-        st.Page("src/pages/home.py", title="Home", icon="🏠", default=True),
-        st.Page("src/pages/data_table.py", title="Data table", icon="📋"),
-        st.Page("src/pages/data_plot.py", title="Data plot", icon="📈"),
-        st.Page("src/pages/cross_border.py", title="Cross-border flows", icon="🔌"),
-        st.Page("src/pages/about.py", title="About", icon="ℹ️"),
-    ],
+    {
+        "Reservoirs (NVE)": [
+            st.Page("src/pages/home.py", title="Home", icon="🏠", default=True),
+            st.Page("src/pages/data_table.py", title="Data table", icon="📋"),
+            st.Page("src/pages/data_plot.py", title="Data plot", icon="📈"),
+            st.Page("src/pages/fill_analysis.py", title="Fill-level analysis", icon="〰️"),
+        ],
+        "Weather (Open-Meteo)": [
+            st.Page("src/pages/weather_outliers.py", title="Weather outliers", icon="🌧️"),
+        ],
+        "Electricity flows (ENTSO-E)": [
+            st.Page("src/pages/cross_border.py", title="Cross-border flows", icon="🔌"),
+        ],
+        "Project": [
+            st.Page("src/pages/about.py", title="About", icon="ℹ️"),
+        ],
+    },
     position="sidebar",
 )
 navigation.run()

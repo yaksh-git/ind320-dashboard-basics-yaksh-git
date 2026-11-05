@@ -1,4 +1,4 @@
-"""Page 4 – Cross-border flows between Norway and its neighbours, read from MongoDB.
+"""Page 6 – Cross-border flows between Norway and its neighbours, read from MongoDB.
 
 Left column: radio buttons choose the connection (neighbour country) and a select box the
 year; a pie chart shows the energy that went into and out of Norway that year.

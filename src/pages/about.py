@@ -1,4 +1,4 @@
-"""Page 5 – About (page 4 in Part 1): a guide to the sources, areas, units and choices."""
+"""Page 7 – About (page 4 in Part 1, page 5 in Part 2): a guide to the sources, areas, units and choices."""
 
 import streamlit as st
 
@@ -17,7 +17,8 @@ def show_areas_and_units() -> None:
 
         The long time-series plots use **NO 0** so that a line follows the same area each week.
         On the *Data table* and *Data plot* pages you choose the interval and the area type;
-        they show one line per area of that type.
+        they show one line per area of that type. The two analysis pages use the same area type
+        and one area of it, and the weather comes from random locations inside that area.
         """)
     with right, st.container(border=True):
         st.subheader("Read the units")
@@ -26,6 +27,7 @@ def show_areas_and_units() -> None:
         - **TWh / MWh:** energy. 1 TWh = 1,000,000 MWh.
         - **Weekly change:** a change of 0.01 means one percentage point.
         - **Date:** the Sunday that ends the ISO week of the measurement.
+        - **Weather:** °C, mm or cm per hour and km/h (Open-Meteo's units), times in UTC.
 
         The value **0001** in the next-publication-date field means no usable date was supplied.
         """)
@@ -38,7 +40,8 @@ def show_data_sources() -> None:
         st.markdown("""
         | Pages | Source | How the app gets it |
         |---|---|---|
-        | Home, Data table, Data plot | [NVE Magasinstatistikk API](https://biapi.nve.no/magasinstatistikk/swagger/index.html) | Direct API request, cached for six hours |
+        | Home, Data table, Data plot, Fill-level analysis | [NVE Magasinstatistikk API](https://biapi.nve.no/magasinstatistikk/swagger/index.html) | Direct API request, cached for six hours |
+        | Weather outliers | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) (ERA5) | Direct API request per area and year, cached; the locations come from [NVE's area maps](https://atlas.nve.no) (Part 3 notebook) |
         | Cross-border flows | [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Notebook: API → Cassandra (Spark) → MongoDB; the app reads MongoDB |
         """)
 
@@ -49,11 +52,14 @@ def show_project_context() -> None:
         st.subheader("About this project")
         st.write("IND320 combines a Jupyter Notebook for analysis and documentation with a Streamlit app. "
                  "In Part 1 the app read a fixed CSV snapshot. Part 2 replaces it with NVE's open API and "
-                 "adds cross-border flows that were prepared with Spark and Cassandra and stored in MongoDB.")
+                 "adds cross-border flows that were prepared with Spark and Cassandra and stored in MongoDB. "
+                 "Part 3 adds hourly weather for the same areas and time-series analysis: outliers (SPC), "
+                 "anomalies (LOF), STL decomposition and spectrograms.")
         st.write("The combined numeric view on the plot page uses separate panels and vertical scales, "
                  "preserving the original units.")
         st.markdown("[NVE methodology](https://www.nve.no/energi/analyser-og-statistikk/om-magasinstatistikken/) · "
                     "[ENTSO-E API guide](https://documenter.getpostman.com/view/7009892/2s93JtP3F6) · "
+                    "[Open-Meteo docs](https://open-meteo.com/en/docs/historical-weather-api) · "
                     "[Project repository](https://github.com/yaksh-git/ind320-dashboard-basics-yaksh-git)")
 
 

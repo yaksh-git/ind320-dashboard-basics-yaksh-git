@@ -8,3 +8,7 @@ requests>=2.32,<3
 pymongo>=4.10,<5
 # Interactive month chart on the cross-border page (also installed with Streamlit).
 altair>=5,<7
+# Part 3 analysis pages: DCT and spectrogram, Local Outlier Factor, STL.
+scipy>=1.13,<2
+scikit-learn>=1.5,<2
+statsmodels>=0.14,<0.16

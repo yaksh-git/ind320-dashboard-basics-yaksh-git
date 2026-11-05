@@ -1,4 +1,4 @@
-# Extra packages for running the Part 2 notebook locally (not needed by the app).
+# Extra packages for running the Part 2 and Part 3 notebooks locally (not needed by the app).
 -r ../requirements.txt
 # The course book pins PySpark 3.5.1 for the Spark Cassandra Connector 3.5.1.
 pyspark==3.5.1
@@ -9,3 +9,5 @@ setuptools
 ipykernel>=6.29,<8
 nbformat>=5.10,<6
 nbconvert>=7.16,<8
+# Part 3: area polygons and random points (SciPy, scikit-learn and statsmodels come with the app).
+geopandas>=1.0,<2

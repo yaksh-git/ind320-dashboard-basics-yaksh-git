@@ -1,8 +1,9 @@
-"""Export the Part 2 notebook to PDF: nbconvert -> HTML, then headless Google Chrome -> PDF.
+"""Export a notebook to PDF: nbconvert -> HTML, then headless Google Chrome -> PDF.
 
-Run all notebook cells first, then from the repository root:
+Run all notebook cells first, then from the repository root (the default is the Part 3 notebook):
 
-    .venv/bin/python notebooks/export_pdf.py
+    .venv/bin/python notebooks/export_pdf.py                       # notebooks/ind320_part3.ipynb
+    .venv/bin/python notebooks/export_pdf.py ind320_part2.ipynb    # another notebook in notebooks/
 
 The HTML and PDF are written to output/ (ignored by Git). Chrome is used because it is already
 installed; no extra download (LaTeX or a Playwright browser) is needed.
@@ -15,7 +16,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-NOTEBOOK = ROOT / "notebooks" / "ind320_part2.ipynb"
+DEFAULT_NOTEBOOK = "ind320_part3.ipynb"
 OUTPUT = ROOT / "output"
 CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
@@ -35,11 +36,11 @@ PRINT_CSS = """<style>
 """
 
 
-def export_html() -> Path:
+def export_html(notebook: Path) -> Path:
     """Convert the executed notebook to HTML and add the print style sheet."""
     subprocess.run([sys.executable, "-m", "nbconvert", "--to", "html", "--output-dir", str(OUTPUT),
-                    "--output", NOTEBOOK.stem, str(NOTEBOOK)], check=True)
-    html = OUTPUT / f"{NOTEBOOK.stem}.html"
+                    "--output", notebook.stem, str(notebook)], check=True)
+    html = OUTPUT / f"{notebook.stem}.html"
     html.write_text(html.read_text(encoding="utf-8").replace("</head>", PRINT_CSS + "</head>", 1),
                     encoding="utf-8")
     return html
@@ -58,4 +59,5 @@ def print_pdf(html: Path) -> Path:
 
 if __name__ == "__main__":
     OUTPUT.mkdir(exist_ok=True)
-    print("Wrote", print_pdf(export_html()).relative_to(ROOT))
+    notebook = ROOT / "notebooks" / (sys.argv[1] if len(sys.argv) > 1 else DEFAULT_NOTEBOOK)
+    print("Wrote", print_pdf(export_html(notebook)).relative_to(ROOT))
