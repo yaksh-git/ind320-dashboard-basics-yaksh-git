@@ -8,6 +8,7 @@ cross-border electricity flows from ENTSO-E.
 |---|---|
 | 🌐 **Live app** | https://ind320-dashboard-basics-yaksh-git.streamlit.app/ |
 | 📓 **Part 3 notebook** | [`notebooks/ind320_part3.ipynb`](notebooks/ind320_part3.ipynb) |
+| 🎬 **Part 3 screencast** | [`docs/part_3/screencast_part3.mp4`](docs/part_3/screencast_part3.mp4) |
 | 📓 **Part 2 notebook** | [`notebooks/ind320_part2.ipynb`](notebooks/ind320_part2.ipynb) |
 | 🎬 **Part 2 screencast** | [`docs/part_2/screencast_part2.mp4`](docs/part_2/screencast_part2.mp4) |
 | 📁 **Part 1 (archived)** | [`docs/part_1/`](docs/part_1/): notebook and [screencast](docs/part_1/screencast_part1.mp4) |
@@ -63,6 +64,7 @@ notebooks/
 data/regions/           area polygons and 1000 random locations per area (Part 3 notebook)
 docs/part_1/            Part 1 deliverables
 docs/part_2/            Part 2 screencast
+docs/part_3/            Part 3 screencast
 ```
 
 ## Run locally
