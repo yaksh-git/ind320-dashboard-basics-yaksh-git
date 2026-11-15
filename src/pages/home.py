@@ -1,16 +1,30 @@
-"""Page 1 – Home: the newest national reservoir report and the long-term fill level.
+"""Start – Home: the newest national reservoir report, the long-term fill level and cards to every group.
 
-Data come live from the NVE Magasinstatistikk API (see src/utils/nve_api.py).
+Data come live from the NVE Magasinstatistikk API (see src/utils/nve_api.py). The cards at the bottom
+point to the main page of each menu group (Map, Explore, Anomalies, Forecast, Electricity).
 """
 
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.ticker import PercentFormatter
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from src.utils.nve_api import load_data, national_series, nve_or_stop
-from src.utils.ui import ACCENT, chart_style, page_header, show_figure
+from src.utils.ui import ACCENT, GROUP_COLOURS, page_header, show_plot
+
+
+# (group, page file, link text, short description) for the cards at the bottom of the page.
+GROUP_CARDS = [
+    ("Start", "src/pages/map.py", "Map and area selection",
+     "Colour the areas by fill level or weather and click one to choose it for the other pages."),
+    ("Explore", "src/pages/reservoir_data.py", "Explore the reservoir data",
+     "Tables and plots of NVE's weekly data, STL and spectrograms, and weather–reservoir correlation."),
+    ("Anomalies", "src/pages/weather_outliers.py", "Find unusual weather",
+     "Outliers (SPC) and anomalies (LOF) in hourly weather for the chosen area."),
+    ("Forecast", "src/pages/forecast.py", "Forecast the fill level",
+     "River models (SNARIMAX or lag regression) with weather and exchange rates as inputs."),
+    ("Electricity", "src/pages/cross_border.py", "Power across the border",
+     "Physical electricity flows between Norway and its neighbours (ENTSO-E via MongoDB)."),
+]
 
 
 def show_latest_metrics(latest: pd.Series) -> None:
@@ -28,34 +42,32 @@ def show_latest_metrics(latest: pd.Series) -> None:
             st.caption(note)
 
 
-def long_view_figure(series: pd.DataFrame) -> Figure:
+def long_view_figure(series: pd.DataFrame) -> go.Figure:
     """Weekly national fill level since 1995 as a thin line with a light fill below."""
-    figure, axis = plt.subplots(figsize=(11, 2.8))
-    axis.plot(series["date"], series["fill_level"], color=ACCENT, linewidth=0.9)
-    axis.fill_between(series["date"], series["fill_level"], color=ACCENT, alpha=0.08)
-    axis.yaxis.set_major_formatter(PercentFormatter(1.0))  # 0.75 -> 75%
-    axis.set(xlabel="Year", ylabel="Fill level")
+    figure = go.Figure(go.Scatter(
+        x=series["date"], y=series["fill_level"], mode="lines", fill="tozeroy",
+        line={"color": ACCENT, "width": 1}, fillcolor="rgba(8,127,140,0.08)",
+        hovertemplate="Week ending %{x|%d %b %Y}<br>%{y:.1%}<extra></extra>"))
+    figure.update_layout(height=300, margin={"t": 20}, xaxis_title="Year",
+                         yaxis_title="Fill level", yaxis_tickformat=".0%")  # 0.75 -> 75%
     return figure
 
 
-def show_navigation_cards(frame: pd.DataFrame) -> None:
-    """Two cards that lead to the table page and the plot page."""
-    left, right = st.columns(2)
-    with left, st.container(border=True):
-        st.subheader("Understand the fields")
-        st.write(f"{len(frame):,} API records, {len(frame.columns)} fields "
-                 "and nine geographic series.")
-        st.page_link("src/pages/data_table.py", label="Explore the data table", icon="📋")
-    with right, st.container(border=True):
-        st.subheader("Find a pattern")
-        st.write("Choose a measurement and a month range to explore the weekly records.")
-        st.page_link("src/pages/data_plot.py", label="Open the interactive plots", icon="📈")
+def show_group_cards() -> None:
+    """One card per menu group, coloured like the group, with a link to its main page."""
+    columns = st.columns(len(GROUP_CARDS))
+    for column, (group, page, label, text) in zip(columns, GROUP_CARDS):
+        with column, st.container(border=True):
+            st.markdown(f"<span style='color:{GROUP_COLOURS[group]}; font-weight:700; font-size:.78rem; "
+                        f"letter-spacing:.12em'>{group.upper()}</span>", unsafe_allow_html=True)
+            st.write(text)
+            st.page_link(page, label=label)
 
 
 def render_page() -> None:
-    """Draw the page: header, newest values, long-term chart and links to other pages."""
-    page_header("IND320 / NORWEGIAN RESERVOIRS", "Norway’s water reserves",
-                "Explore weekly reservoir levels, understand the data, and compare trends over time.")
+    """Draw the page: header, newest values, long-term chart and cards to the menu groups."""
+    page_header("Start", "Norway’s water reserves",
+                "Explore weekly reservoir levels, the weather behind them, and forecasts of the coming months.")
     frame = nve_or_stop(load_data)   # all areas, cached for six hours
     series = national_series(frame)  # Norway total (NO, area 0)
     latest = series.iloc[-1]         # the newest week returned by the API
@@ -64,11 +76,10 @@ def render_page() -> None:
     show_latest_metrics(latest)
 
     st.subheader("The long view")
-    st.caption("Weekly fill level for the national series. "
-               "The detailed plot page lets you choose a shorter period.")
-    chart_style()
-    show_figure(long_view_figure(series))
-    show_navigation_cards(frame)
+    st.caption("Weekly fill level for the national series. Hover for values; drag to zoom.")
+    show_plot(long_view_figure(series))
+    st.subheader("Where to go next")
+    show_group_cards()
 
 
 render_page()

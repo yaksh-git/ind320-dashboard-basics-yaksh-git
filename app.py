@@ -1,46 +1,43 @@
-"""Entry point for the seven-page Streamlit app (IND320 Part 3)."""
-
-import os
-import tempfile
-from pathlib import Path
+"""Entry point for the Streamlit app (IND320 Part 4): page config, shared style and the grouped menu."""
 
 import streamlit as st
 
 
-# Matplotlib needs a writable cache when the plot pages load (including on Windows).
-mpl_cache = Path(tempfile.gettempdir()) / "ind320-matplotlib"
-mpl_cache.mkdir(exist_ok=True)
-os.environ["MPLCONFIGDIR"] = str(mpl_cache)
-
 st.set_page_config(page_title="Norwegian Reservoir Dashboard", layout="wide")
 
-# Imported here, after MPLCONFIGDIR is set above: ui.py imports Matplotlib, which reads it on import.
-from src.utils.ui import setup_ui
+from src.utils.ui import setup_ui  # noqa: E402 (set_page_config must be the first Streamlit call)
 
 setup_ui()
 with st.sidebar:
     st.markdown("### Norwegian power data")
-    st.caption("IND320 · Part 3\n\nReservoirs from the NVE API, weather from Open-Meteo, "
-               "cross-border flows from ENTSO-E.")
+    st.caption("IND320 · Part 4\n\nReservoirs from NVE, weather from Open-Meteo, exchange rates from "
+               "Norges Bank, cross-border flows from ENTSO-E.")
 
-# Streamlit renders this page list in the sidebar on every page, grouped by data source.
-# Part 3: the reservoir pages come first, followed by the fill-level analysis (same NVE data) and
-# the weather page; the type of area is shared by pages 2-5 (src/utils/controls.py).
+# Part 4: the menu is grouped by the type of task (see the sketch in the Part 4 notebook).
+# Start: overview and the map where the area is chosen; Explore: data and exploratory analysis;
+# Anomalies: unusual weather; Forecast: predictions; Electricity: Part 2 flows; Info: documentation.
+# Each group has its own colour (src/utils/ui.py), shown in the page header and the active menu entry.
 navigation = st.navigation(
     {
-        "Reservoirs (NVE)": [
+        "Start": [
             st.Page("src/pages/home.py", title="Home", icon="🏠", default=True),
-            st.Page("src/pages/data_table.py", title="Data table", icon="📋"),
-            st.Page("src/pages/data_plot.py", title="Data plot", icon="📈"),
-            st.Page("src/pages/fill_analysis.py", title="Fill-level analysis", icon="〰️"),
+            st.Page("src/pages/map.py", title="Map", icon="🗺️"),
         ],
-        "Weather (Open-Meteo)": [
+        "Explore": [
+            st.Page("src/pages/reservoir_data.py", title="Reservoir data", icon="📋"),
+            st.Page("src/pages/fill_analysis.py", title="Fill-level analysis", icon="〰️"),
+            st.Page("src/pages/correlation.py", title="Weather vs. reservoir", icon="🔗"),
+        ],
+        "Anomalies": [
             st.Page("src/pages/weather_outliers.py", title="Weather outliers", icon="🌧️"),
         ],
-        "Electricity flows (ENTSO-E)": [
+        "Forecast": [
+            st.Page("src/pages/forecast.py", title="Reservoir forecast", icon="🔮"),
+        ],
+        "Electricity": [
             st.Page("src/pages/cross_border.py", title="Cross-border flows", icon="🔌"),
         ],
-        "Project": [
+        "Info": [
             st.Page("src/pages/about.py", title="About", icon="ℹ️"),
         ],
     },

@@ -1,10 +1,12 @@
 """Download hourly ERA5 weather from Open-Meteo for the Magasinstatistikk areas.
 
-The Part 3 notebook drew 1000 random locations inside each area (NVE polygons, land only) and
-saved them to data/regions/sample_points.csv. The app downloads a random subset of these locations
+The Part 3 notebook drew 1000 random locations inside each area (NVE polygons, land only). Part 4
+stores them as GeoJSON (data/regions/sample_points.geojson, one MultiPoint per area) instead of a CSV
+file, as peer review 3 suggested. The app downloads a random subset of these locations
 for the chosen area and year, and averages them per hour, exactly like download_weather() in the notebook.
 """
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -13,7 +15,7 @@ import streamlit as st
 
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
-POINTS_FILE = Path(__file__).resolve().parents[2] / "data" / "regions" / "sample_points.csv"
+POINTS_FILE = Path(__file__).resolve().parents[2] / "data" / "regions" / "sample_points.geojson"
 N_LOCATIONS = 20  # one year at 20 locations stays well inside Open-Meteo's free daily quota
 SEED = 320        # same random subset as in the notebook
 ERA5_GRID = 0.25  # degrees; points in the same grid cell would return identical values
@@ -32,7 +34,11 @@ VARIABLES = {
 @st.cache_data
 def load_points() -> pd.DataFrame:
     """The 1000 random locations per area from the notebook (area_type, area_number, lon, lat)."""
-    return pd.read_csv(POINTS_FILE)
+    features = json.loads(POINTS_FILE.read_text(encoding="utf-8"))["features"]
+    # One row per point: each feature is one area, and its MultiPoint holds that area's 1000 points.
+    return pd.DataFrame([{"area_type": f["properties"]["area_type"], "area_number": f["properties"]["area_number"],
+                          "lon": lon, "lat": lat}
+                         for f in features for lon, lat in f["geometry"]["coordinates"]])
 
 
 def area_locations(area_type: str, area_number: int) -> pd.DataFrame:

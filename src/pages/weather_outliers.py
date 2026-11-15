@@ -1,9 +1,10 @@
-"""Page 5 – Weather outliers: SPC outliers and LOF anomalies in hourly ERA5 weather for one area.
+"""Anomalies – Weather outliers: SPC outliers and LOF anomalies in hourly ERA5 weather for one area.
 
-The area comes from the shared controls (src/utils/controls.py), the same type of area as on the
-reservoir pages; the year is chosen on this page. The weather is downloaded directly from
+The area comes from the shared controls (src/utils/controls.py) or a click on the Map page, so it
+follows the user between pages; the year is chosen on this page (a local choice). The weather is downloaded directly from
 Open-Meteo when the page needs it (src/utils/weather_api.py) and cached, so there is no separate
 download page. Each tab has its own variable and parameters and shows the plot and its statistics.
+Part 4: both tabs let the user choose the weather property; temperature is the default.
 """
 
 from datetime import date
@@ -14,12 +15,14 @@ import streamlit as st
 from src.utils.analysis import lof_anomalies, plot_lof, plot_spc, spc_outliers
 from src.utils.controls import area_controls
 from src.utils.nve_api import load_areas, load_data, nve_or_stop
-from src.utils.ui import chart_style, page_header, show_figure
+from src.utils.ui import page_header, show_plot
 from src.utils.weather_api import FIRST_YEAR, N_LOCATIONS, VARIABLES, weather_or_stop
 
 
 DEFAULT_YEAR = 2024  # the year analysed in the Part 3 notebook
 LOF_NEIGHBOURS = 48  # two days of hours: each hour is compared with about two days around it
+# Variables that are zero in most hours: their MAD is close to zero, so SPC flags many hours.
+MOSTLY_ZERO = ("precipitation", "rain", "snowfall")
 
 
 def choose_year() -> int:
@@ -48,7 +51,8 @@ def show_spc_statistics(result: pd.DataFrame, sd: float, unit: str) -> None:
     outliers = result.loc[result["outlier"]]
     show_metrics([("Hours", f"{len(result):,}"), ("Outliers", f"{len(outliers):,}"),
                   ("Share of hours", f"{len(outliers) / len(result):.1%}"),
-                  ("Robust std. dev.", f"{sd:.3g} {unit}")])
+                  # The unit is in the label, so the value stays short enough for the narrow card.
+                  (f"Robust std. dev. ({unit})", f"{sd:.3g}")])
     with st.expander(f"Table of the {len(outliers):,} outliers"):
         table = (outliers.sort_values("satv", key=abs, ascending=False)
                  [["value", "satv", "lower", "upper"]]
@@ -61,14 +65,19 @@ def show_spc(weather: pd.DataFrame, title_suffix: str) -> None:
     """SPC tab: variable, DCT cut-off and number of standard deviations, then plot and statistics."""
     left, middle, right = st.columns(3)
     with left:
-        variable = choose_variable("precipitation", key="spc_variable")
+        variable = choose_variable("temperature_2m", key="spc_variable")
     cutoff = middle.slider("DCT cut-off (cycles per year)", 1, 52, 12,
                            help="Slower variations than this count as seasonal and are removed. 12 ≈ monthly.")
     n_sd = right.slider("Number of robust standard deviations", 1.0, 6.0, 3.0, step=0.5)
     label, unit = VARIABLES[variable]
     result, sd = spc_outliers(weather[variable], cutoff, n_sd)
-    show_figure(plot_spc(result, label, unit, f"{label} with SPC limits ±{n_sd:g} sd, {title_suffix}"))
+    show_plot(plot_spc(result, label, unit, f"{label} with SPC limits ±{n_sd:g} sd, {title_suffix}"))
     show_spc_statistics(result, sd, unit)
+    if variable in MOSTLY_ZERO:
+        st.info(f"{label} is zero in most hours, so the robust standard deviation (MAD) is very small and "
+                "SPC flags many hours. SPC assumes a roughly symmetric variation around the seasonal level; "
+                "for such skewed variables the flagged hours are better read as \"wet\" or \"snowy\" hours "
+                "than as errors.")
     st.caption("A DCT high-pass filter removes the seasonal level; the rest is the seasonally adjusted "
                "variation (SATV). The limits are the median ± n robust standard deviations (MAD × 1.4826) "
                "of the SATV, added back to the seasonal level. For precipitation the lower limit is "
@@ -99,8 +108,8 @@ def show_lof(weather: pd.DataFrame, title_suffix: str) -> None:
     proportion = right.slider("Proportion of anomalies (%)", 0.5, 5.0, 1.0, step=0.5, format="%.1f") / 100
     label, unit = VARIABLES[variable]
     result = lof_anomalies(weather[variable], proportion, LOF_NEIGHBOURS)
-    show_figure(plot_lof(result, label, unit, f"{label} with LOF anomalies ({proportion:.1%}), "
-                                              f"{title_suffix}"))
+    show_plot(plot_lof(result, label, unit, f"{label} with LOF anomalies ({proportion:.1%}), "
+                                            f"{title_suffix}"))
     show_lof_statistics(result, unit)
     st.caption(f"Each hour is described by its time and its value (both standardised). LOF compares the "
                f"density around an hour with that of its {LOF_NEIGHBOURS} nearest neighbours, so an hour "
@@ -123,8 +132,7 @@ def show_data_source() -> None:
 
 def render_page() -> None:
     """Draw the page: area and year, then the SPC and LOF tabs and the data-source expander."""
-    chart_style()
-    page_header("IND320 / WEATHER", "Weather outliers",
+    page_header("Anomalies", "Weather outliers",
                 "Find unusual hours in the weather of a reservoir area, with SPC and the Local Outlier Factor.")
     frame = nve_or_stop(load_data)   # the area list follows the reservoir data
     areas = nve_or_stop(load_areas)

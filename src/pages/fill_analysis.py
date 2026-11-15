@@ -1,7 +1,7 @@
-"""Page 4 – Fill-level analysis: STL decomposition and spectrogram of one area's weekly fill level.
+"""Explore – Fill-level analysis: STL decomposition and spectrogram of one area's weekly fill level.
 
-The area is chosen with the shared controls at the top (src/utils/controls.py); the type of area
-is the same radio as on the Data table and Data plot pages. Each tab has its own parameters.
+The area is chosen with the shared controls at the top (src/utils/controls.py) or by clicking it
+on the Map page; the choice follows the user between pages. Each tab has its own parameters.
 Both methods need many years of data, so the page uses the full weekly history from the NVE API.
 """
 
@@ -11,7 +11,7 @@ import streamlit as st
 from src.utils.analysis import WEEKS_PER_YEAR, plot_spectrogram, plot_stl, spectrogram_db, stl_parts
 from src.utils.controls import area_controls
 from src.utils.nve_api import load_areas, load_data, nve_or_stop
-from src.utils.ui import chart_style, page_header, show_figure
+from src.utils.ui import page_header, show_plot
 
 
 def fill_series(frame: pd.DataFrame, area_type: str, area_number: int) -> pd.Series:
@@ -44,8 +44,8 @@ def show_stl(series: pd.Series, name: str) -> None:
     robust = right.toggle("Robust fitting", value=True,
                           help="Gives unusual weeks less weight when the trend and season are estimated.")
     parts = stl_parts(series, seasonal, trend, robust)
-    show_figure(plot_stl(parts, f"STL of fill level, {name} (seasonal={seasonal}, trend={trend}, "
-                                f"robust={robust})"))
+    show_plot(plot_stl(parts, f"STL of fill level, {name} (seasonal={seasonal}, trend={trend}, "
+                              f"robust={robust})"))
     show_stl_statistics(parts)
     st.caption("Observed = trend + seasonal + remainder. Near both ends the trend is less reliable, "
                "because LOESS only has data on one side. pp = percentage points.")
@@ -58,17 +58,16 @@ def show_spectrogram(series: pd.Series, name: str) -> None:
                          help="Long windows separate frequencies better; short windows follow time better.")
     overlap_share = right.slider("Overlap between windows (%)", 0, 90, 75, step=5)
     overlap = int(window * overlap_share / 100)  # SciPy wants the overlap as a number of weeks
-    show_figure(plot_spectrogram(*spectrogram_db(series, window, overlap),
-                                 f"Spectrogram of fill level, {name} (window {window} weeks, "
-                                 f"overlap {overlap} weeks)"))
+    show_plot(plot_spectrogram(*spectrogram_db(series, window, overlap),
+                               f"Spectrogram of fill level, {name} (window {window} weeks, "
+                               f"overlap {overlap} weeks)"))
     st.caption(f"Window {window} weeks ≈ {window / WEEKS_PER_YEAR:.1f} years. The bright band at "
                "1 cycle per year is the yearly fill-and-draw-down cycle; bands at 2 and 3 are its harmonics.")
 
 
 def render_page() -> None:
     """Draw the page: area choice, then the STL and spectrogram tabs."""
-    chart_style()
-    page_header("IND320 / TIME-SERIES ANALYSIS", "Fill-level analysis",
+    page_header("Explore", "Fill-level analysis",
                 "Split the weekly reservoir fill level into trend and season, and see which cycles dominate.")
     frame = nve_or_stop(load_data)   # full history, cached (src/utils/nve_api.py)
     areas = nve_or_stop(load_areas)  # area names (HentOmråder)

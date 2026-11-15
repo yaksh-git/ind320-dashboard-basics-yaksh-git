@@ -1,14 +1,14 @@
 # Packages for the Streamlit app (installed by Streamlit Community Cloud).
 streamlit>=1.52,<2
 pandas>=2.2,<3
-matplotlib>=3.9,<4
-seaborn>=0.13,<0.14
 numpy>=2.0,<3
 requests>=2.32,<3
 pymongo>=4.10,<5
-# Interactive month chart on the cross-border page (also installed with Streamlit).
-altair>=5,<7
+# Part 4: every chart is an interactive Plotly figure (maps, animation, subplots).
+plotly>=6.1,<8
 # Part 3 analysis pages: DCT and spectrogram, Local Outlier Factor, STL.
 scipy>=1.13,<2
 scikit-learn>=1.5,<2
 statsmodels>=0.14,<0.16
+# Part 4 forecasts: online machine learning (SNARIMAX and linear regression).
+river>=0.22,<1
