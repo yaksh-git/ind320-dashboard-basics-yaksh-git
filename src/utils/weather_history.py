@@ -60,3 +60,13 @@ def area_weather(frame: pd.DataFrame, area_type: str, area_number: int) -> pd.Da
     """Weekly weather of one area, indexed by the Sunday that ends each week."""
     rows = frame.loc[(frame["area_type"] == area_type) & (frame["area_number"] == area_number)]
     return rows.set_index("week")[list(WEEKLY_VARIABLES)].sort_index()
+
+
+def area_weather_or_stop(frame: pd.DataFrame, area_type: str, area_number: int, name: str) -> pd.DataFrame:
+    """Weekly weather of one area; if MongoDB has none for it, show a short message and stop the page."""
+    weather = area_weather(frame, area_type, area_number)
+    if weather.empty:
+        st.warning(f"There is no weekly weather for {name} in MongoDB yet. "
+                   "Run section 5 of the Part 4 notebook to add it.")
+        st.stop()
+    return weather

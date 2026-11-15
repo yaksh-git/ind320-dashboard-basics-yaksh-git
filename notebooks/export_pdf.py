@@ -1,8 +1,8 @@
 """Export a notebook to PDF: nbconvert -> HTML, then headless Google Chrome -> PDF.
 
-Run all notebook cells first, then from the repository root (the default is the Part 3 notebook):
+Run all notebook cells first, then from the repository root (the default is the Part 4 notebook):
 
-    .venv/bin/python notebooks/export_pdf.py                       # notebooks/ind320_part3.ipynb
+    .venv/bin/python notebooks/export_pdf.py                       # notebooks/ind320_part4.ipynb
     .venv/bin/python notebooks/export_pdf.py ind320_part2.ipynb    # another notebook in notebooks/
 
 The HTML and PDF are written to output/ (ignored by Git). Chrome is used because it is already
@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_NOTEBOOK = "ind320_part3.ipynb"
+DEFAULT_NOTEBOOK = "ind320_part4.ipynb"
 OUTPUT = ROOT / "output"
 CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 

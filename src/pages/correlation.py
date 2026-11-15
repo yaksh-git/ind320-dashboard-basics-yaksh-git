@@ -16,7 +16,7 @@ from src.utils.analysis import (lag_correlations, plot_lag_correlations, plot_sl
 from src.utils.controls import area_controls, period_slider
 from src.utils.nve_api import load_areas, load_data, nve_or_stop
 from src.utils.ui import page_header, show_plot
-from src.utils.weather_history import WEEKLY_VARIABLES, area_weather, weekly_weather_or_stop
+from src.utils.weather_history import WEEKLY_VARIABLES, area_weather_or_stop, weekly_weather_or_stop
 
 
 # Representative reservoir variables: the weekly change follows the weather more directly than the level.
@@ -69,7 +69,7 @@ def render_page() -> None:
         st.caption("The area and the period are shared with the Map and Forecast pages.")
     weather_column, reservoir_column, lag, window = choose_settings()
 
-    weather_series = area_weather(weather, area_type, number)[weather_column].loc[period[0]:period[1]]
+    weather_series = area_weather_or_stop(weather, area_type, number, name)[weather_column].loc[period[0]:period[1]]
     reservoir = reservoir_series(frame, area_type, number, reservoir_column).loc[period[0]:period[1]]
     if len(weather_series.dropna()) < window + abs(lag):
         st.warning("The period is too short for this window and lag. Choose a longer period on the Map page "

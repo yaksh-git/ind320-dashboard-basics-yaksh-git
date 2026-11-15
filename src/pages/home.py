@@ -14,15 +14,15 @@ from src.utils.ui import ACCENT, GROUP_COLOURS, page_header, show_plot
 
 # (group, page file, link text, short description) for the cards at the bottom of the page.
 GROUP_CARDS = [
-    ("Start", "src/pages/map.py", "Map and area selection",
+    ("Start", "src/pages/map.py", "Open the map",
      "Colour the areas by fill level or weather and click one to choose it for the other pages."),
-    ("Explore", "src/pages/reservoir_data.py", "Explore the reservoir data",
+    ("Explore", "src/pages/reservoir_data.py", "Reservoir data",
      "Tables and plots of NVE's weekly data, STL and spectrograms, and weather–reservoir correlation."),
-    ("Anomalies", "src/pages/weather_outliers.py", "Find unusual weather",
+    ("Anomalies", "src/pages/weather_outliers.py", "Weather outliers",
      "Outliers (SPC) and anomalies (LOF) in hourly weather for the chosen area."),
-    ("Forecast", "src/pages/forecast.py", "Forecast the fill level",
+    ("Forecast", "src/pages/forecast.py", "Forecast",
      "River models (SNARIMAX or lag regression) with weather and exchange rates as inputs."),
-    ("Electricity", "src/pages/cross_border.py", "Power across the border",
+    ("Electricity", "src/pages/cross_border.py", "Cross-border flows",
      "Physical electricity flows between Norway and its neighbours (ENTSO-E via MongoDB)."),
 ]
 

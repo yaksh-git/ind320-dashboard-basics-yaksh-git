@@ -36,6 +36,7 @@ EXOGENOUS = {
     "snowpack": "Snowfall over the last 26 weeks (cm)",
     "eur_nok": "EUR/NOK exchange rate",
 }
+DEFAULT_EXOGENOUS = ["snowpack", "temperature"]  # the best combination in the notebook tests (section 7.6)
 
 
 @dataclass(frozen=True)
@@ -44,14 +45,14 @@ class Settings:
     model: str = "Lag regression"
     history_years: int = 8      # length of the training period (years of weeks)
     horizon: int = 26           # weeks to forecast
-    p: int = 2                  # number of recent weekly changes (lag regression) / AR order (SNARIMAX)
+    p: int = 1                  # number of recent weekly changes (lag regression) / AR order (SNARIMAX)
     d: int = 0                  # SNARIMAX: differencing
     q: int = 0                  # SNARIMAX: moving-average order
-    sp: int = 1                 # seasonal AR order (lag regression: use last year's change, 1 = yes)
+    sp: int = 0                 # seasonal AR order (lag regression: use last year's change, 1 = yes)
     sd: int = 1                 # SNARIMAX: seasonal differencing
     sq: int = 0                 # SNARIMAX: seasonal moving-average order
-    learning_rate: float = 0.003
-    epochs: int = 3             # lag regression: passes over the training weeks
+    learning_rate: float = 0.001
+    epochs: int = 5             # lag regression: passes over the training weeks
     interval: float = 0.8       # width of the confidence band (0.8 = 10 % and 90 % quantiles)
 
 
@@ -148,12 +149,14 @@ def forecast_snarimax(fill: pd.Series, exog: pd.DataFrame | None, train: pd.Date
 
 def forecast_fill(fill: pd.Series, exog: pd.DataFrame | None, train_end: pd.Timestamp,
                   settings: Settings = Settings(), with_band: bool = True,
-                  train_start: pd.Timestamp | None = None) -> pd.DataFrame:
+                  train_start: pd.Timestamp | None = None, observed_future: bool = False) -> pd.DataFrame:
     """Forecast the fill level (percent) for settings.horizon weeks after train_end.
 
     fill: weekly fill level in percent (index = Sunday of each week), at least WARM_UP weeks before
     the training period. exog: weekly exogenous variables on the same index, or None.
     The training period is train_start–train_end; without train_start it is settings.history_years long.
+    observed_future=True uses the observed exogenous values for the forecast weeks instead of the climatology
+    (only possible in a backtest; it shows how much a perfect weather forecast would help).
     Returns one row per future week with the forecast and, if with_band, the lower and upper quantiles.
     """
     fill = fill.asfreq("W-SUN").interpolate()  # a missing week would break the weekly lags
@@ -167,9 +170,13 @@ def forecast_fill(fill: pd.Series, exog: pd.DataFrame | None, train_end: pd.Time
         # Training cannot start before the exogenous data do (the weekly weather starts in 2016).
         first = fill.index.searchsorted(exog.index[0])
     train = fill.index[first: end + 1]
-    future_frame = future_exogenous(exog, train_end, settings.horizon) if exog is not None and not exog.empty \
-        else pd.DataFrame(index=pd.date_range(train_end + pd.Timedelta(weeks=1), periods=settings.horizon,
-                                              freq="W-SUN"))
+    future_weeks = pd.date_range(train_end + pd.Timedelta(weeks=1), periods=settings.horizon, freq="W-SUN")
+    if exog is None or exog.empty:
+        future_frame = pd.DataFrame(index=future_weeks)
+    elif observed_future:
+        future_frame = exog.reindex(future_weeks).ffill()
+    else:
+        future_frame = future_exogenous(exog, train_end, settings.horizon)
     future_exog = exog_rows(future_frame, future_frame.index)  # [{}, {}, ...] without exogenous data
 
     def run(loss: optim.losses.RegressionLoss) -> np.ndarray:
