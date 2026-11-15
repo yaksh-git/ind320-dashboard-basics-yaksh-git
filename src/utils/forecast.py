@@ -36,7 +36,7 @@ EXOGENOUS = {
     "snowpack": "Snowfall over the last 26 weeks (cm)",
     "eur_nok": "EUR/NOK exchange rate",
 }
-DEFAULT_EXOGENOUS = ["snowpack", "temperature"]  # the best combination in the notebook tests (section 7.6)
+DEFAULT_EXOGENOUS = ["precipitation", "snowfall"]  # the best combination in the notebook tests (section 7.6)
 
 
 @dataclass(frozen=True)
@@ -81,7 +81,7 @@ def future_exogenous(exog: pd.DataFrame, train_end: pd.Timestamp, horizon: int) 
     a typical April. Only data up to train_end is used, so the forecast never sees the future.
     """
     past = exog.loc[:train_end]
-    weeks = pd.date_range(train_end + pd.Timedelta(weeks=1), periods=horizon, freq="W-SUN")
+    weeks = pd.date_range(train_end + pd.offsets.Week(1), periods=horizon, freq="W-SUN")
     climatology = past.groupby(past.index.isocalendar().week.to_numpy()).mean()
     # Week 53 only exists in some years; if it is missing, the neighbouring week fills the gap.
     future = climatology.reindex(weeks.isocalendar().week.to_numpy()).ffill().bfill()
@@ -170,7 +170,7 @@ def forecast_fill(fill: pd.Series, exog: pd.DataFrame | None, train_end: pd.Time
         # Training cannot start before the exogenous data do (the weekly weather starts in 2016).
         first = fill.index.searchsorted(exog.index[0])
     train = fill.index[first: end + 1]
-    future_weeks = pd.date_range(train_end + pd.Timedelta(weeks=1), periods=settings.horizon, freq="W-SUN")
+    future_weeks = pd.date_range(train_end + pd.offsets.Week(1), periods=settings.horizon, freq="W-SUN")
     if exog is None or exog.empty:
         future_frame = pd.DataFrame(index=future_weeks)
     elif observed_future:

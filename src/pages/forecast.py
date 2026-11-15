@@ -95,14 +95,16 @@ def animated_figure(history: pd.Series, actual: pd.Series, forecast: pd.DataFram
     figure.update_layout(
         title=title, height=520, yaxis_title="Fill level (%)", yaxis_range=[0, 100],
         # A fixed time axis, so the plot does not jump while the forecast grows.
-        xaxis_range=[history.index[0], forecast.index[-1] + pd.Timedelta(weeks=2)],
+        xaxis_range=[history.index[0], forecast.index[-1] + pd.offsets.Week(2)],
         legend={"orientation": "h", "y": 1.02, "yanchor": "bottom", "x": 0},
         updatemenus=[{"type": "buttons", "buttons": [play], "x": 0, "y": -0.12, "xanchor": "left"}],
         sliders=[{"steps": [{"label": f"{week:%d %b}", "method": "animate",
                              "args": [[str(k)], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}]}
                             for k, week in enumerate(forecast.index, start=1)],
                   "active": len(forecast) - 1,  # start by showing the whole forecast
-                  "x": 0.1, "len": 0.9, "y": -0.08, "currentvalue": {"prefix": "Forecast to "}}],
+                  # The current week is shown on the right, so it does not overlap the Play button on the left.
+                  "x": 0.12, "len": 0.88, "y": -0.08,
+                  "currentvalue": {"prefix": "Forecast to ", "xanchor": "right"}}],
     )
     return figure
 
@@ -111,12 +113,15 @@ def show_statistics(forecast: pd.DataFrame, fill: pd.Series, train_weeks: int) -
     """Key numbers: training length, forecast at the horizon and the error if the weeks are observed."""
     error = mean_absolute_error(forecast, fill)
     last = forecast.iloc[-1]
-    cards = [("Training weeks", f"{train_weeks:,}"),
-             (f"Forecast {forecast.index[-1]:%d %b %Y}", f"{last['forecast']:.1f} %"),
-             ("Band at the horizon", f"{last['lower']:.0f}–{last['upper']:.0f} %"),
-             ("Mean absolute error", f"{error:.1f} pp" if error is not None else "not observed yet")]
-    for column, (label, value) in zip(st.columns(4), cards):
-        column.metric(label, value)
+    # Short values, so they are not cut off in narrow columns; the explanation is in the help icon.
+    cards = [("Training weeks", f"{train_weeks:,}", None),
+             (f"Forecast {forecast.index[-1]:%d %b %Y}", f"{last['forecast']:.1f} %", None),
+             ("Band at the horizon", f"{last['lower']:.0f}–{last['upper']:.0f} %", None),
+             ("Error (MAE)", f"{error:.1f} pp" if error is not None else "–",
+              "Mean absolute error: the mean distance between the forecast and the observed fill level. "
+              "Shown when the forecast weeks are already observed (a training period that ends in the past).")]
+    for column, (label, value, help_text) in zip(st.columns(4), cards):
+        column.metric(label, value, help=help_text)
 
 
 def render_page() -> None:
@@ -140,7 +145,7 @@ def render_page() -> None:
         # Only in a backtest (period ending in the past) can the observed weather of the forecast weeks be used.
         observed_future = st.toggle(
             "Backtest with the observed weather (a perfect weather forecast)", value=False,
-            disabled=train_end + pd.Timedelta(weeks=settings.horizon) > weeks[-1] or not names,
+            disabled=train_end + pd.offsets.Week(settings.horizon) > weeks[-1] or not names,
             help="For a training period that ends in the past: use the weather that really came instead of "
                  "the climatology. Shows how much better the forecast would be with a perfect weather forecast.")
 
