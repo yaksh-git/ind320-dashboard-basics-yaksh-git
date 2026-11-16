@@ -171,6 +171,9 @@ def render_page() -> None:
     show_plot(animated_figure(history, actual, forecast,
                               f"{name}: {settings.model}, {settings.horizon} weeks from {train_end:%d %b %Y}"))
     st.caption(f"Shaded: the {settings.interval:.0%} band from two extra models trained with the quantile loss. "
+               "The weekly quantiles add up over the horizon, so the band is conservative: in the notebook tests the "
+               "80% band of the lag regression contained 93% of the observed weeks, the 50% band 80%. The SNARIMAX "
+               "band is less reliable (62% for 80%). "
                "Dotted: the observed fill level after the training period, if it exists (not used for training).")
     with st.expander("Forecast values"):
         st.dataframe(forecast.round(1).rename_axis("Week ending"), width="stretch")

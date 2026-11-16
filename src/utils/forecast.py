@@ -13,7 +13,9 @@ Exogenous variables are weekly weather (MongoDB, prepared in the Part 4 notebook
 exchange rate (Norges Bank). The future weather is unknown, so it is replaced by the mean of the same
 ISO week in the training years (climatology); the exchange rate keeps its last value.
 Confidence bands (bonus task): two extra models are trained with the quantile (pinball) loss
-(optim.losses.Quantile), one for the lower and one for the upper quantile.
+(optim.losses.Quantile), one for the lower and one for the upper quantile. The band never changes the
+forecast itself. It is wider than its nominal level, because the weekly quantiles add up over the horizon
+(notebook section 7.7: the 80 % band of the lag regression contained 93 % of the observed weeks).
 The same function is developed and tested in section 7 of the Part 4 notebook.
 """
 
@@ -37,6 +39,9 @@ EXOGENOUS = {
     "eur_nok": "EUR/NOK exchange rate",
 }
 DEFAULT_EXOGENOUS = ["precipitation", "snowfall"]  # the best combination in the notebook tests (section 7.6)
+# The pinball loss has small, bounded gradients (at most the quantile level times the feature), so with the
+# forecast's learning rate the quantile models had not converged and crossed the forecast in half of the weeks.
+QUANTILE_LR_FACTOR = 10
 
 
 @dataclass(frozen=True)
@@ -179,19 +184,21 @@ def forecast_fill(fill: pd.Series, exog: pd.DataFrame | None, train_end: pd.Time
         future_frame = future_exogenous(exog, train_end, settings.horizon)
     future_exog = exog_rows(future_frame, future_frame.index)  # [{}, {}, ...] without exogenous data
 
-    def run(loss: optim.losses.RegressionLoss) -> np.ndarray:
-        """One model trained with the given loss."""
+    def run(loss: optim.losses.RegressionLoss, model_settings: Settings) -> np.ndarray:
+        """One model trained with the given loss and settings."""
         if settings.model == "SNARIMAX":
-            return forecast_snarimax(fill, exog, train, future_exog, settings, loss)
-        return forecast_lag_regression(fill, exog, train, future_frame.index, future_exog, settings, loss)
+            return forecast_snarimax(fill, exog, train, future_exog, model_settings, loss)
+        return forecast_lag_regression(fill, exog, train, future_frame.index, future_exog, model_settings, loss)
 
-    result = pd.DataFrame({"forecast": run(optim.losses.Squared())}, index=future_frame.index)
+    result = pd.DataFrame({"forecast": run(optim.losses.Squared(), settings)}, index=future_frame.index)
     if with_band:
         tail = (1 - settings.interval) / 2  # 0.8 -> the 10 % and 90 % quantiles
-        result["lower"] = run(optim.losses.Quantile(tail))
-        result["upper"] = run(optim.losses.Quantile(1 - tail))
-        # Separate models can cross; sort so that lower <= forecast <= upper in every week.
-        result[["lower", "forecast", "upper"]] = np.sort(result[["lower", "forecast", "upper"]], axis=1)
+        quantile_settings = replace(settings, learning_rate=settings.learning_rate * QUANTILE_LR_FACTOR)
+        lower = run(optim.losses.Quantile(tail), quantile_settings)
+        upper = run(optim.losses.Quantile(1 - tail), quantile_settings)
+        # Separate models can still cross the forecast in a week; widen the band there, but never move the forecast.
+        result["lower"] = np.minimum(lower, result["forecast"])
+        result["upper"] = np.maximum(upper, result["forecast"])
     return result
 
 
