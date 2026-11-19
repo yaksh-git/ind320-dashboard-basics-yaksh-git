@@ -85,7 +85,7 @@ def render_page() -> None:
                                        f"{name}: {window}-week sliding correlation, lag {lag} weeks"))
     show_plot(plot_lag_correlations(correlations, lag))
     st.caption("The correlation is plotted at the last week of each window. Weather comes from MongoDB "
-               "(weekly ERA5 means/sums of 6 locations per area); the reservoir data from NVE's API.")
+               "(weekly ERA5 means/sums of 12 representative locations per area); the reservoir data from NVE's API.")
 
 
 render_page()

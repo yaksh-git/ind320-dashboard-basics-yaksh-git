@@ -16,7 +16,7 @@ commented code over clever code, and explain changes in plain language.
 app.py                  entry point: page navigation only
 requirements.txt        app packages (installed by Streamlit Community Cloud)
 src/pages/              one file per Streamlit page
-src/utils/              shared code: nve_api.py (NVE API), weather_api.py (Open-Meteo, hourly),
+src/utils/              shared code: nve_api.py (NVE API), weather_api.py (Open-Meteo, hourly), locations.py,
                         weather_history.py (weekly weather from MongoDB), currency.py (Norges Bank),
                         flows_db.py (MongoDB client + flows), analysis.py (SPC, LOF, STL, spectrogram, sliding
                         correlation), forecast.py (River models), controls.py (interval slider, area type, one
@@ -75,8 +75,9 @@ forecast), Electricity (Cross-border flows), Info (About). Area and period are s
 - NVE regions in atlas.nve.no are split: VASS1 (east) = RS + RØ, VASS2 = RV, VASS3 (north) = RM + RN.
   The NVE polygons include the sea; clip them to land before drawing random locations.
 - Open-Meteo (ERA5, 0.25° grid) counts one call per location per started 14 days (≤ 10 variables); free:
-  10,000/day, 5,000/hour. The hourly page averages 20 locations for one year; the weekly history (Part 4)
-  uses 6 locations per area from 2016, downloaded once by the notebook and stored in MongoDB.
+  10,000/day, 5,000/hour. Locations come from `locations.py`: k-means clusters of the 1000 points, one ERA5 cell
+  per cluster, weighted by the cluster's share (teacher feedback, Part 3). The hourly page uses 20 for one year; the
+  weekly history (Part 4) uses 12 per area from 2016, downloaded once by the notebook and stored in MongoDB.
 - Norges Bank rates are business days only, fixed about 14:15 CET; use weekly means (`W-SUN`, as NVE).
 
 ## Commands

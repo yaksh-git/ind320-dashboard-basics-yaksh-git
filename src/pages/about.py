@@ -43,8 +43,8 @@ def show_data_sources() -> None:
         | Pages | Source | How the app gets it |
         |---|---|---|
         | Home, Map, Reservoir data, Fill-level analysis, Weather vs. reservoir, Forecast | [NVE Magasinstatistikk API](https://biapi.nve.no/magasinstatistikk/swagger/index.html) | Direct API request, cached for six hours |
-        | Weather outliers | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) (ERA5, hourly) | Direct API request per area and year, cached; the locations come from [NVE's area maps](https://atlas.nve.no) (Part 3 notebook) |
-        | Map, Weather vs. reservoir, Forecast | Open-Meteo (ERA5, daily → weekly) | Notebook (Part 4): 6 locations per area, 2016 onwards, weekly means/sums → MongoDB; the app reads MongoDB |
+        | Weather outliers | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) (ERA5, hourly) | Direct API request per area and year, cached; 20 representative, weighted locations from the 1000 random points inside [NVE's area maps](https://atlas.nve.no) |
+        | Map, Weather vs. reservoir, Forecast | Open-Meteo (ERA5, daily → weekly) | Notebook (Part 4): 12 representative, weighted locations per area, 2016 onwards, weekly means/sums → MongoDB; the app reads MongoDB |
         | Forecast (exogenous variable) | [Norges Bank exchange rates](https://app.norges-bank.no/query/#/en/) | Direct API request, cached for twelve hours |
         | Map outlines | NVE map services (Part 3 notebook) | GeoJSON file in the repository (`data/regions/areas.geojson`) |
         | Cross-border flows | [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Notebook: API → Cassandra (Spark) → MongoDB; the app reads MongoDB |

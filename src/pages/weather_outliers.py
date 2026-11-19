@@ -124,8 +124,10 @@ def show_data_source() -> None:
           model **ERA5** (reanalysis on a 0.25° grid, about 28 × 15 km in Norway), hourly values in UTC.
         - **Locations:** the Part 3 notebook drew 1000 random locations on land inside each area, using
           NVE's polygons for the price areas and NVE regions (east = RS + RØ, north = RM + RN).
-          The app downloads {N_LOCATIONS} of them (one per ERA5 grid cell) and shows the **mean per hour**.
-          All 1000 would use most of Open-Meteo's free daily quota.
+          All 1000 would use most of Open-Meteo's free daily quota, so the app groups them into {N_LOCATIONS}
+          clusters, downloads one ERA5 cell per cluster and shows the **weighted mean per hour** (weight = the
+          cluster's share of the 1000 points). This is much closer to the mean of all 1000 points than
+          {N_LOCATIONS} random locations (teacher feedback on Part 3; test in the Part 4 notebook, section 5.4).
         - **Caching:** one download per area and year; it is reused until the app restarts.
         """)
 
@@ -142,7 +144,7 @@ def render_page() -> None:
             area_type, number, name = area_controls(frame, areas)
         with right:
             year = choose_year()
-        st.caption(f"Weather is the hourly mean of {N_LOCATIONS} random locations inside {name}, "
+        st.caption(f"Weather is the weighted hourly mean of {N_LOCATIONS} representative locations inside {name}, "
                    "downloaded from Open-Meteo for the chosen year. The type of area is shared with "
                    "the other pages.")
     weather = weather_or_stop(area_type, number, year)

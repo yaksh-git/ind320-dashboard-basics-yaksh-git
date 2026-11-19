@@ -3,7 +3,8 @@
 The Map, Weather vs. reservoir and Forecast pages need many years of weather for all areas. That is
 too many Open-Meteo calls to download live (the free quota is 10,000 calls per day, and ten years at
 one location cost about 280 calls). The Part 4 notebook therefore downloads daily ERA5 values once for
-6 locations per area (one per ERA5 grid cell), sums or averages them per ISO week in Norwegian time and
+12 representative locations per area (k-means clusters of the 1000 random points, weighted by their share
+of the points; src/utils/locations.py), sums or averages them per ISO week in Norwegian time and
 stores the result in MongoDB. Each document is one area and one week:
 
     {"area_type": "EL", "area_number": 3, "week": <Sunday that ends the ISO week>,
