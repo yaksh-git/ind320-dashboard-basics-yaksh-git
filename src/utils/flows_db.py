@@ -14,6 +14,7 @@ year and month follow Norwegian local time, so January starts at midnight in Osl
 import pandas as pd
 from pymongo import MongoClient
 from pymongo.collection import Collection
+from pymongo.database import Database
 from pymongo.errors import ConfigurationError
 import streamlit as st
 
@@ -28,11 +29,12 @@ class MissingSecrets(RuntimeError):
 
 
 @st.cache_resource
-def get_collection() -> Collection:
-    """Create one MongoDB client per app process and return the flow collection.
+def get_database() -> Database:
+    """Create one MongoDB client per app process and return the project database.
 
     The connection string is read from st.secrets: locally from .streamlit/secrets.toml
     (ignored by Git) and on Streamlit Community Cloud from the app's Secrets settings.
+    Part 4: the weekly weather (src/utils/weather_history.py) uses the same client.
     """
     try:
         settings = st.secrets["mongo"]
@@ -46,7 +48,12 @@ def get_collection() -> Collection:
         client = MongoClient(uri, serverSelectionTimeoutMS=10_000)
     except ConfigurationError as error:
         raise MissingSecrets("The MongoDB 'uri' in the Streamlit secrets is not valid.") from error
-    return client[settings.get("database", "ind320")][COLLECTION]
+    return client[settings.get("database", "ind320")]
+
+
+def get_collection() -> Collection:
+    """The collection with the hourly cross-border flows."""
+    return get_database()[COLLECTION]
 
 
 @st.cache_data(ttl=CACHE_SECONDS)

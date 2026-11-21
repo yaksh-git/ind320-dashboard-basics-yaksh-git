@@ -1,31 +1,30 @@
-"""Page 6 – Cross-border flows between Norway and its neighbours, read from MongoDB.
+"""Electricity – Cross-border flows between Norway and its neighbours, read from MongoDB.
 
 Left column: radio buttons choose the connection (neighbour country) and a select box the
-year; a pie chart shows the energy that went into and out of Norway that year.
-Right column: pills choose which months to include; an interactive line chart (Altair) shows the
+year; a donut chart shows the energy that went into and out of Norway that year.
+Right column: pills choose which months to include; an interactive Plotly line chart shows the
 flows for every link and direction, as in the notebook. Below: an expander documents the data source.
 The data were fetched and prepared in the Part 2 notebook (ENTSO-E -> Cassandra/Spark -> MongoDB).
+Part 4: the Matplotlib pie and the Altair line chart are replaced by Plotly charts.
 """
 
 import calendar
 from collections.abc import Callable
 from typing import Any
 
-import altair as alt
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from pymongo.errors import PyMongoError
 import streamlit as st
 
 from src.utils.flows_db import (DIRECTION_LABELS, MissingSecrets, load_months, load_options,
                                 load_year_totals)
-from src.utils.ui import chart_style, page_header, show_figure, wide_page
+from src.utils.ui import ACCENT, HIGHLIGHT, page_header, show_plot, wide_page
 
 
 # Fixed colours: imports and exports keep the same colour in every chart on this page.
-DIRECTION_COLORS = {"import": "#087F8C", "export": "#B35A12"}
-PIE_SIZE = (6, 4.6)  # inches; Streamlit scales the figure to the column width
+DIRECTION_COLORS = {"import": ACCENT, "export": HIGHLIGHT}
 
 
 def read_mongo(loader: Callable[..., Any], *args: Any) -> Any:
@@ -51,27 +50,18 @@ def load_options_or_stop() -> dict[str, list]:
 
 # ---- Left column: yearly balance ----
 
-def yearly_pie_figure(totals: pd.DataFrame, neighbour: str, year: int) -> Figure:
-    """Pie chart of energy into and out of Norway; the legend gives every slice's TWh and share."""
+def yearly_pie_figure(totals: pd.DataFrame, neighbour: str, year: int) -> go.Figure:
+    """Donut chart of energy into and out of Norway; hover and legend give every slice's TWh and share."""
     totals = totals.sort_values("direction", ascending=False)  # import first, then export
     twh = totals["energy_mwh"] / 1e6  # 1 TWh = 1,000,000 MWh
-    shares = twh / twh.sum() * 100
-    figure, axis = plt.subplots(figsize=PIE_SIZE)
-    wedges, _, _ = axis.pie(
-        twh,
-        colors=[DIRECTION_COLORS[d] for d in totals["direction"]],
-        # Text inside a slice only when the slice is big enough to hold it (e.g. a 3 % import
-        # slice is too thin); the legend below always shows the numbers.
-        autopct=lambda share: f"{share:.0f}%\n{share * twh.sum() / 100:.2f} TWh" if share >= 15 else "",
-        pctdistance=0.68,  # place the numbers well inside each slice
-        startangle=90, counterclock=False,
-        wedgeprops={"edgecolor": "white", "linewidth": 2},
-        textprops={"color": "white", "fontweight": "bold"},
-    )
-    labels = [f"{DIRECTION_LABELS[d]}: {value:.2f} TWh ({share:.0f}%)"
-              for d, value, share in zip(totals["direction"], twh, shares)]
-    axis.legend(wedges, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=1, frameon=False)
-    axis.set_title(f"Norway ↔ {neighbour}, {year}")
+    figure = go.Figure(go.Pie(
+        labels=[DIRECTION_LABELS[d] for d in totals["direction"]], values=twh, hole=0.45, sort=False,
+        marker={"colors": [DIRECTION_COLORS[d] for d in totals["direction"]],
+                "line": {"color": "white", "width": 2}},
+        texttemplate="%{percent:.0%}<br>%{value:.2f} TWh", textposition="inside",
+        hovertemplate="%{label}<br>%{value:.2f} TWh (%{percent:.1%})<extra></extra>"))
+    figure.update_layout(title=f"Norway ↔ {neighbour}, {year}", height=420,
+                         legend={"orientation": "h", "y": -0.05})
     return figure
 
 
@@ -87,7 +77,7 @@ def show_yearly_balance(options: dict[str, list]) -> tuple[str, int]:
         st.info("No flow recorded for this connection and year.")
         return neighbour, year
 
-    show_figure(yearly_pie_figure(totals, neighbour, year))
+    show_plot(yearly_pie_figure(totals, neighbour, year))
     by_direction = totals.set_index("direction")["energy_mwh"] / 1e6
     net = by_direction.get("export", 0.0) - by_direction.get("import", 0.0)
     st.caption(f"Net {'export' if net >= 0 else 'import'}: {abs(net):.2f} TWh. "
@@ -126,44 +116,29 @@ def month_label(months: list[int]) -> str:
 
 
 def chart_data(data: pd.DataFrame, months: list[int], resolution: str) -> pd.DataFrame:
-    """Hourly or daily-mean values per link and direction, ready for the Altair chart."""
+    """Hourly or daily-mean values per link and direction, ready for the Plotly chart."""
     frame = data
     if resolution == "Daily mean":
         # The mean of the hourly MWh values over a day is still MWh per hour (≈ average MW).
         frame = (data.set_index("time").groupby(["link", "direction"])["energy_mwh"]
                  .resample("D").mean().dropna().reset_index())
-    frame = frame.assign(segment=frame["time"].dt.month.map(month_segments(months)))
-    time_format = "%d %b %Y %H:%M" if resolution == "Hourly" else "%d %b %Y"
-    frame["when"] = frame["time"].dt.strftime(time_format)  # readable time for the tooltip
-    # Norwegian wall-clock time without a zone label, shown as is (see the utc scale below).
+    segment = frame["time"].dt.month.map(month_segments(months)).astype(str)
+    # One line per link, direction and run of adjacent months, so a gap between months stays empty.
+    frame = frame.assign(line=frame["link"] + " " + frame["direction"] + " " + segment)
+    # Norwegian wall-clock time without a zone label: Plotly shows naive times exactly as given.
     frame["time"] = frame["time"].dt.tz_localize(None)
     return frame
 
 
-def months_flows_chart(frame: pd.DataFrame, title: str) -> alt.Chart:
-    """Interactive line chart: colour = link, solid = import, dashed = export (as in the notebook).
-
-    Hover over a line to see the values; scroll or drag to zoom and move along the time axis.
-    """
-    return (
-        alt.Chart(frame, title=title)
-        .mark_line(strokeWidth=1.3)
-        .encode(
-            # A utc scale shows the times exactly as given, whatever time zone the viewer is in.
-            x=alt.X("time:T", scale=alt.Scale(type="utc"), axis=alt.Axis(format="%d %b", title=None)),
-            y=alt.Y("energy_mwh:Q", title=Y_TITLE),
-            color=alt.Color("link:N", title="Link", legend=alt.Legend(orient="bottom")),
-            strokeDash=alt.StrokeDash(  # own legend above the chart, so it is not cut off
-                "direction:N", title="Direction", legend=alt.Legend(orient="top", direction="horizontal"),
-                scale=alt.Scale(domain=["import", "export"], range=[[1, 0], [6, 3]])),
-            detail="segment:N",  # separate line pieces for months that are not adjacent
-            tooltip=[alt.Tooltip("when:N", title="Time"), alt.Tooltip("link:N", title="Link"),
-                     alt.Tooltip("direction:N", title="Direction"),
-                     alt.Tooltip("energy_mwh:Q", title="MWh per hour", format=",.0f")],
-        )
-        .properties(height=440)
-        .interactive(bind_y=False)  # zoom and pan along the time axis only
-    )
+def months_flows_chart(frame: pd.DataFrame, title: str) -> go.Figure:
+    """Interactive line chart: colour = link, solid = import, dashed = export (as in the notebook)."""
+    figure = px.line(frame, x="time", y="energy_mwh", color="link", line_dash="direction",
+                     line_group="line", line_dash_map={"import": "solid", "export": "dash"},
+                     labels={"energy_mwh": Y_TITLE, "link": "Link", "direction": "Direction", "time": ""},
+                     hover_data={"line": False, "energy_mwh": ":,.0f"})
+    figure.update_traces(line={"width": 1.3})
+    figure.update_layout(title=title, height=480, legend={"orientation": "h", "y": -0.15})
+    return figure
 
 
 def show_months_flows(neighbour: str, year: int) -> None:
@@ -174,8 +149,8 @@ def show_months_flows(neighbour: str, year: int) -> None:
     # Daily means give calm, readable lines; "Hourly" shows every hour, as in the notebook.
     resolution = st.segmented_control("Resolution", RESOLUTIONS, default="Daily mean")
     st.caption(f"Connection and year follow the choices on the left: Norway ↔ {neighbour}, {year}. "
-               "Hover for values; scroll to zoom in time. Months that are not next to each other "
-               "leave a gap in the lines.")
+               "Hover for values; drag to zoom in time, double-click to reset. Months that are not next "
+               "to each other leave a gap in the lines.")
     if not months:
         st.info("Select at least one month.")
         return
@@ -185,8 +160,7 @@ def show_months_flows(neighbour: str, year: int) -> None:
         return
     resolution = resolution or "Daily mean"  # the toggle returns None if it is clicked off
     title = f"Norway ↔ {neighbour}, {year}: {month_label(months)} ({resolution.lower()})"
-    chart = months_flows_chart(chart_data(data, months, resolution), title)
-    st.altair_chart(chart, width="stretch")
+    show_plot(months_flows_chart(chart_data(data, months, resolution), title))
 
 
 # ---- Below the columns ----
@@ -212,8 +186,7 @@ def show_data_source() -> None:
 
 def render_page() -> None:
     """Draw the page: two columns (yearly pie | line chart by month) and the data-source expander."""
-    chart_style()
-    page_header("IND320 / CROSS-BORDER FLOWS", "Power across the border",
+    page_header("Electricity", "Power across the border",
                 "Physical electricity flows between Norway and its neighbours, "
                 "from ENTSO-E via MongoDB.")
     wide_page()  # two charts side by side need more width than the other pages
