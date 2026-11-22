@@ -30,6 +30,9 @@ PRINT_CSS = """<style>
   .jp-OutputArea-output { overflow: visible !important; }
   .jp-OutputArea-output pre { font-size: 72% !important; }
   .jp-OutputArea-output table { font-size: 72% !important; }  /* output tables only, not markdown */
+  /* Long text output may continue on the next page; otherwise JupyterLab's style moves it whole
+     and leaves a nearly empty page behind the code cell. */
+  .jp-OutputArea-child, .jp-OutputArea-output, .jp-Cell-outputWrapper { break-inside: auto !important; }
   img { break-inside: avoid; max-width: 100% !important; }
 }
 </style>
